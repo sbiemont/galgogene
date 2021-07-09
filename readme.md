@@ -34,10 +34,10 @@ For more example, see [todo](todo)
 
 Before creating an engine, operators have to be defined:
 
-* [Selection](#selection_operator):
-* [Mutation](#mutation_operator):
-* [Survivor](#survivor_operator):
-* [Ender](#ender_operator):
+* [Selection](#selection-operator): selection method to fetch one individual from the population
+* [Mutation](#mutation-operator): mutation method applied on the choosen individuals
+* [Survivor](#survivor-operator): mutated individuals are added of the new pool, only select some "survivors"
+* [Ender](#ender-operator): ending conditions
 
 ### Selection operator
 
@@ -160,9 +160,12 @@ ender := operator.MultiEnder{
 
 ## The engine
 
-An engine combines operators and custom user action.
+An engine combines all [operators](#the-operators) and
+an optional custom user action (`OnNewGeneration`) called each time a new generation is ready.
 
 ### Simple engine
+
+Define minimalistic operators for an engine, without the custom action.
 
 ```go
 eng := engine.Engine{
@@ -175,8 +178,37 @@ eng := engine.Engine{
 
 ### Complex engine
 
-TODO: custom action
-TODO: engine with multi operators
+Define all multi operators with a custom user action.
+
+```go
+eng := Engine{
+  Selector: operator.MultiSelector{
+    operator.NewProbaSelector(0.5, operator.SelectorRoulette{}),            // 50% chance to use roulette selector
+    operator.NewProbaSelector(1, operator.SelectorTournament{Fighters: 3}), // Otherwise, use tournament selector with 3 fighters
+  },
+  Mutator: operator.MultiMutators{
+    operator.NewProbaMutator(1, operator.UniformCrossOver{}),   // 100% chance to apply uniform cross-over
+    operator.NewProbaMutator(0.1, operator.Mutate{Rate: 0.5}),  // 10% chance to also apply a mutation, eaach bit has 50% chance to be changed
+  },
+  Survivor: operator.MultiSurvivor{
+    operator.SurvivorAddParentsElite{K: 2}, // Add 2 elite parent's individuals to the new generation
+    operator.SurvivorElite{},               // Then, only keep best individuals to create the new population
+  },
+  Ender: operator.MultiEnder{
+    &operator.EnderGeneration{K: 50},               // Stop at generation #50
+    &operator.EnderImprovement{},                   // Or stop if total fitness has not been improved
+    &operator.EnderAboveFitness{Fitness: 1},        // Or stop if Fitness=1 is reached
+    &operator.EnderDuration{Duration: time.Second}, // Or stop if total computation time of generations has reached 1s
+  },
+  OnNewGeneration: func(pop gene.Population) { // OnNewGeneration is called each time a new generation is produced
+    elite := pop.Elite()
+    fmt.Printf(
+      "Generation #%d, fit: %f, tot: %f, str: %s\n",
+      pop.GenerationNb, elite.Fitness, pop.TotalFitness, string(elite.Code.ToBytes()),
+    )
+  },
+}
+```
 
 ### Run the engine
 
