@@ -81,8 +81,8 @@ func (eng Engine) nextGeneration(parents gene.Population) (gene.Population, erro
 	// Survivors + total fitness and additional data
 	eng.Survivor.Survive(parents, &newPop)
 	newPop.ComputeTotalFitness()
-	newPop.GenerationNb = parents.GenerationNb + 1
-	newPop.TotalDuration = parents.TotalDuration + time.Since(start)
+	newPop.Stats.GenerationNb = parents.Stats.GenerationNb + 1
+	newPop.Stats.TotalDuration = parents.Stats.TotalDuration + time.Since(start)
 	return newPop, nil
 }
 

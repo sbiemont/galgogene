@@ -1,6 +1,25 @@
-# Galgogene
+# galgogene
 
 Galgogene is a simple implementation of a [genetic algorithm](https://en.wikipedia.org/wiki/Genetic_algorithm).
+
+Here is the general algorithm explained using pseudo code:
+
+```raw
+pop = init random population of n individuals
+loop until ending condition found {
+  pop' = new empty population
+  loop on arbitrary k {
+    select individual1 from pop
+    select individual2 from pop
+
+    mutate individual1 with individual2 to create individual1' and individual2'
+    add individual1' and individual2' to pop'
+  }
+  choose survivors from pop'
+  pop = pop' (pop become is the new generation)
+}
+return pop
+```
 
 Reminder:
 
@@ -28,7 +47,7 @@ graph LR
 
 ## Getting started
 
-For more example, see [todo](todo)
+For more example, see [/galgogene/example](https://github.com/sbiemont/galgogene/tree/master/example)
 
 ## The operators
 
@@ -204,7 +223,7 @@ eng := Engine{
     elite := pop.Elite()
     fmt.Printf(
       "Generation #%d, fit: %f, tot: %f, str: %s\n",
-      pop.GenerationNb, elite.Fitness, pop.TotalFitness, string(elite.Code.ToBytes()),
+      pop.Stats.GenerationNb, elite.Fitness, pop.Stats.TotalFitness, string(elite.Code.ToBytes()),
     )
   },
 }

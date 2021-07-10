@@ -18,16 +18,21 @@ func NewIndividual(code Bits) Individual {
 	}
 }
 
+// PopulationStats gathers general data for a population
+type PopulationStats struct {
+	TotalFitness  float64
+	TotalDuration time.Duration
+	GenerationNb  int
+}
+
 // FitnessFct defines the fitness function for a given individual
 type FitnessFct func(Bits) float64
 
 // Population represents an ordered list of individual with a common fitness function
 type Population struct {
-	Individuals   []Individual
-	fitness       FitnessFct
-	TotalFitness  float64
-	TotalDuration time.Duration
-	GenerationNb  int
+	Individuals []Individual
+	fitness     FitnessFct
+	Stats       PopulationStats
 }
 
 // NewPopulation init an empty population of n individuals with a fitness function
@@ -53,19 +58,19 @@ func (pop *Population) Init(bitsSize int) {
 
 // ComputeFitness computes an set all fitnesses for each individual
 func (pop *Population) ComputeFitness() {
-	pop.TotalFitness = 0
+	pop.Stats.TotalFitness = 0
 	for i, individual := range pop.Individuals {
 		fitness := pop.fitness(individual.Code)
 		pop.Individuals[i].Fitness = fitness
-		pop.TotalFitness += fitness
+		pop.Stats.TotalFitness += fitness
 	}
 }
 
 // ComputeTotalFitness restart computation of total fitness
 func (pop *Population) ComputeTotalFitness() {
-	pop.TotalFitness = 0
+	pop.Stats.TotalFitness = 0
 	for _, individual := range pop.Individuals {
-		pop.TotalFitness += individual.Fitness
+		pop.Stats.TotalFitness += individual.Fitness
 	}
 }
 

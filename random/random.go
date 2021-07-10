@@ -16,13 +16,12 @@ func Ints(min, max, k int) []int {
 
 // Bit returns a random bit 0 or 1
 func Bit() uint8 {
-	rand.Int()
 	return uint8(rand.Intn(2))
 }
 
 // Peek checks if the random generated rate in [0 ; 1[ matches the given one
 func Peek(rate float64) bool {
-	return rand.Float64() < rate
+	return Percent() < rate
 }
 
 // Percent returns a random percentage in [0 ; 1[

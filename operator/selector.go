@@ -27,7 +27,7 @@ type SelectorRoulette struct{}
 // Starting from the top of the population, keep adding the fitnesses to the partial sum P, till P<S
 // The individual for which P exceeds S is the chosen individual.
 func (SelectorRoulette) Select(pop gene.Population) (gene.Individual, error) {
-	randFitness := rand.Float64() * pop.TotalFitness
+	randFitness := rand.Float64() * pop.Stats.TotalFitness
 
 	var currFitness float64
 	for _, individual := range pop.Individuals {
