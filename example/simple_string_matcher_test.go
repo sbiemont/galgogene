@@ -40,7 +40,7 @@ func TestSimpleStringMatcher(t *testing.T) {
 				elite := pop.Elite()
 				fmt.Printf(
 					"Generation #%d, dur: %s fit: %f, tot: %f, str: %s\n",
-					pop.GenerationNb, pop.TotalDuration, elite.Fitness, pop.TotalFitness, string(elite.Code.ToBytes()),
+					pop.Stats.GenerationNb, pop.Stats.TotalDuration, elite.Fitness, pop.Stats.TotalFitness, string(elite.Code.ToBytes()),
 				)
 			},
 		}

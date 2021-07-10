@@ -61,9 +61,9 @@ func TestPopulation(t *testing.T) {
 				fitness:     fitness,
 			}
 
-			So(pop.TotalFitness, ShouldEqual, 0)
+			So(pop.Stats.TotalFitness, ShouldEqual, 0)
 			pop.ComputeFitness()
-			So(pop.TotalFitness, ShouldEqual, 8+0+1+2)
+			So(pop.Stats.TotalFitness, ShouldEqual, 8+0+1+2)
 		})
 
 		Convey("when sort", func() {

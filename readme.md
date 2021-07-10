@@ -223,7 +223,7 @@ eng := Engine{
     elite := pop.Elite()
     fmt.Printf(
       "Generation #%d, fit: %f, tot: %f, str: %s\n",
-      pop.GenerationNb, elite.Fitness, pop.TotalFitness, string(elite.Code.ToBytes()),
+      pop.Stats.GenerationNb, elite.Fitness, pop.Stats.TotalFitness, string(elite.Code.ToBytes()),
     )
   },
 }

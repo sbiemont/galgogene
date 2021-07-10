@@ -13,23 +13,23 @@ func TestEnders(t *testing.T) {
 		Convey("when generation ender", func() {
 			Convey("when ko", func() {
 				ender := EnderGeneration{K: 10}
-				pop := gene.Population{GenerationNb: 9}
+				pop := gene.Population{Stats: gene.PopulationStats{GenerationNb: 9}}
 				So(ender.End(pop), ShouldBeNil)
 			})
 
 			Convey("when ok", func() {
 				ender := EnderGeneration{K: 10}
-				pop := gene.Population{GenerationNb: 10}
+				pop := gene.Population{Stats: gene.PopulationStats{GenerationNb: 10}}
 				So(ender.End(pop), ShouldEqual, &ender)
 			})
 		})
 
 		Convey("when improvement ender", func() {
 			ender := EnderImprovement{}
-			pop := gene.Population{TotalFitness: 42}
+			pop := gene.Population{Stats: gene.PopulationStats{TotalFitness: 42}}
 			So(ender.End(pop), ShouldBeNil)
 
-			pop.TotalFitness = 43
+			pop.Stats.TotalFitness = 43
 			So(ender.End(pop), ShouldBeNil)
 
 			// TotalFitness is still 43 => no more improvment
@@ -79,13 +79,13 @@ func TestEnders(t *testing.T) {
 		Convey("when duration ender", func() {
 			Convey("when ko", func() {
 				ender := EnderDuration{Duration: time.Minute}
-				pop := gene.Population{TotalDuration: time.Second}
+				pop := gene.Population{Stats: gene.PopulationStats{TotalDuration: time.Second}}
 				So(ender.End(pop), ShouldBeNil)
 			})
 
 			Convey("when ok", func() {
 				ender := EnderDuration{Duration: time.Minute}
-				pop := gene.Population{TotalDuration: time.Minute}
+				pop := gene.Population{Stats: gene.PopulationStats{TotalDuration: time.Minute}}
 				So(ender.End(pop), ShouldEqual, &ender)
 			})
 		})
@@ -97,24 +97,30 @@ func TestEnders(t *testing.T) {
 
 			Convey("when ko", func() {
 				pop := gene.Population{
-					GenerationNb:  9,
-					TotalDuration: time.Second,
+					Stats: gene.PopulationStats{
+						GenerationNb:  9,
+						TotalDuration: time.Second,
+					},
 				}
 				So(ender.End(pop), ShouldBeNil)
 			})
 
 			Convey("when ok, ender #1", func() {
 				pop := gene.Population{
-					GenerationNb:  10,
-					TotalDuration: time.Second,
+					Stats: gene.PopulationStats{
+						GenerationNb:  10,
+						TotalDuration: time.Second,
+					},
 				}
 				So(ender.End(pop), ShouldEqual, &ender1)
 			})
 
 			Convey("when ok, ender #2", func() {
 				pop := gene.Population{
-					GenerationNb:  9,
-					TotalDuration: time.Minute,
+					Stats: gene.PopulationStats{
+						GenerationNb:  9,
+						TotalDuration: time.Minute,
+					},
 				}
 				So(ender.End(pop), ShouldEqual, &ender2)
 			})

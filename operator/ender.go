@@ -28,7 +28,7 @@ type EnderGeneration struct {
 }
 
 func (end *EnderGeneration) End(pop gene.Population) Ender {
-	return condition(pop.GenerationNb >= end.K, end)
+	return condition(pop.Stats.GenerationNb >= end.K, end)
 }
 
 // ------------------------------
@@ -40,8 +40,8 @@ type EnderImprovement struct {
 }
 
 func (end *EnderImprovement) End(pop gene.Population) Ender {
-	stop := end.previousTotalFitness == pop.TotalFitness
-	end.previousTotalFitness = pop.TotalFitness
+	stop := end.previousTotalFitness == pop.Stats.TotalFitness
+	end.previousTotalFitness = pop.Stats.TotalFitness
 	return condition(stop, end)
 }
 
@@ -87,7 +87,7 @@ type EnderDuration struct {
 }
 
 func (end *EnderDuration) End(pop gene.Population) Ender {
-	return condition(pop.TotalDuration >= end.Duration, end)
+	return condition(pop.Stats.TotalDuration >= end.Duration, end)
 }
 
 // ------------------------------
