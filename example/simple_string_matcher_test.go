@@ -2,6 +2,7 @@ package example
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 
 	"genalgo.git/engine"
@@ -12,6 +13,7 @@ import (
 
 func TestSimpleStringMatcher(t *testing.T) {
 	Convey("simple string matcher", t, func() {
+		rand.Seed(180)
 		targetStr := "This is my first genetic algorithm using simple string matcher!"
 		targetBits := gene.NewBitsFromBytes([]byte(targetStr))
 		bitsSize := len(targetBits)
