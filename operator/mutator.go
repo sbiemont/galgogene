@@ -15,14 +15,14 @@ type Mutator interface {
 
 // https://en.wikipedia.org/wiki/Crossover_(genetic_algorithm)
 
-// OnePointCrossOver performs cross-over with 1 randomly choosen point
+// OnePointCrossOver performs cross-over with 1 randomly chosen point
 type OnePointCrossOver struct{}
 
 func (OnePointCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 	return crossOver(bits1, bits2, random.Ints(0, len(bits1), 1))
 }
 
-// TwoPointsCrossOver performs cross-over with 2 randomly choosen points
+// TwoPointsCrossOver performs cross-over with 2 randomly chosen points
 type TwoPointsCrossOver struct{}
 
 func (TwoPointsCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {

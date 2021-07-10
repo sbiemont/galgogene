@@ -58,7 +58,7 @@ func (st SelectorTournament) Select(pop gene.Population) (gene.Individual, error
 	// Select k indexes from the population
 	indexes := random.Ints(0, len(pop.Individuals), st.Fighters)
 
-	// Select the best of choosen ones
+	// Select the best of chosen ones
 	best := &pop.Individuals[indexes[0]]
 	for _, index := range indexes[1:] {
 		current := &pop.Individuals[index]
@@ -84,7 +84,7 @@ func NewProbaSelector(rate float64, sel Selector) ProbaSelector {
 }
 
 // MultiSelector defines an ordered list of selectors each one with a given probability in [0 ; 1]
-// The first choosen selector ends processing. If no selector matches, an error is raised
+// The first chosen selector ends processing. If no selector matches, an error is raised
 type MultiSelector []ProbaSelector
 
 // NewMultiSelector checks for consistency probailities
@@ -110,7 +110,7 @@ func NewMultiSelector(selectors []ProbaSelector) (MultiSelector, error) {
 
 // Select an individual
 // First, randomly choose a selector
-// Then, use the choosen selector on the current population
+// Then, use the chosen selector on the current population
 func (ms MultiSelector) Select(pop gene.Population) (gene.Individual, error) {
 	for _, probaSelector := range ms {
 		if random.Peek(probaSelector.rate) {

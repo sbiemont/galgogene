@@ -2,45 +2,6 @@
 
 Galgogene is a simple implementation of a [genetic algorithm](https://en.wikipedia.org/wiki/Genetic_algorithm).
 
-Here is the general algorithm explained using pseudo code:
-
-```raw
-pop = init random population of n individuals
-loop until ending condition found {
-  pop' = new empty population
-  loop on arbitrary k {
-    select individual1 from pop
-    select individual2 from pop
-
-    mutate individual1 with individual2 to create individual1' and individual2'
-    add individual1' and individual2' to pop'
-  }
-  choose survivors from pop'
-  pop = pop' (pop become is the new generation)
-}
-return pop
-```
-
-Reminder:
-
-```mermaid
-graph LR
-  init(Init)
-  survive(Survials)
-  select(Selection)
-  mutate(Mutation)
-  pool(New pool)
-  ender(End?)
-  start(Input population)
-
-  init --> start
-  start --> select --> mutate -->|add| pool
-  pool -->|continue| start
-  pool -->|done| survive --> ender
-  ender -->|yes| done(Done)
-  ender -->|use survivals as<br>input generation| start
-```
-
 ## Roadmap
 
 * [ ] add examples
@@ -49,12 +10,14 @@ graph LR
 
 For more example, see [/galgogene/example](https://github.com/sbiemont/galgogene/tree/master/example)
 
+See [annex](#annex) for general information about the main algorithm.
+
 ## The operators
 
 Before creating an engine, operators have to be defined:
 
 * [Selection](#selection-operator): selection method to fetch one individual from the population
-* [Mutation](#mutation-operator): mutation method applied on the choosen individuals
+* [Mutation](#mutation-operator): mutation method applied on the chosen individuals
 * [Survivor](#survivor-operator): mutated individuals are added of the new pool, only select some "survivors"
 * [Ender](#ender-operator): ending conditions
 
@@ -73,8 +36,8 @@ selector := operator.SelectorRoulette{}
 ```
 
 It is also possible to have an **ordered** list of selectors using `MultiSelector`.
-Each selector has a probability to be used: if the first selector is not choosen, try the second one and so on.
-If no selector has been choosen, an error will be raised by the `Engine`.
+Each selector has a probability to be used: if the first selector is not chosen, try the second one and so on.
+If no selector has been chosen, an error will be raised by the `Engine`.
 Use the `NewMultiSelector()` for consistency to avoid any further error.
 
 For example, create a `Multiselector`:
@@ -93,12 +56,12 @@ if err != nil{
 
 ### Mutation operator
 
-Once individuals have been choosen, apply a mutation like a cross-over or a simple random bits mutation.
+Once individuals have been chosen, apply a mutation like a cross-over or a simple random bits mutation.
 
 mutator | description | parameters
 -------- | ----------- | ----------
-`OnePointCrossOver` |  performs a cross-over with 1 randomly choosen point
-`TwoPointsCrossOver` |  performs a cross-over with 2 randomly choosen points
+`OnePointCrossOver` |  performs a cross-over with 1 randomly chosen point
+`TwoPointsCrossOver` |  performs a cross-over with 2 randomly chosen points
 `UniformCrossOver` |  performs a bit by bit cross-over from both parents with an equal probability of beeing chosen
 `Mutate` |  defines a random mutation of bits | `Rate`: mutation rate in [0 ; 1] (each bit has a chance to be changed)
 
@@ -125,7 +88,7 @@ mutator := operator.MultiMutator{
 
 ### Survivor operator
 
-Once choosen individuals have been mutated, they are injected in the next generation population.
+Once chosen individuals have been mutated, they are injected in the next generation population.
 It is now time to select individuals from this new generation.
 
 survivor | description | parameters
@@ -249,4 +212,45 @@ last, ender, err := eng.Run(popSize, bitsSize, fitness)
 // err:   not nil if an error occurred
 // ender: the ending condition used to stop processing (can be ignored)
 // last:  the last generation
+```
+
+## Annex
+
+Here is the general algorithm explained using pseudo code:
+
+```raw
+pop = init random population of n individuals
+loop until ending condition found {
+  pop' = new empty population
+  loop on arbitrary k {
+    select individual1 from pop
+    select individual2 from pop
+
+    mutate individual1 with individual2 to create individual1' and individual2'
+    add individual1' and individual2' to pop'
+  }
+  choose survivors from pop'
+  pop = pop' (pop become is the new generation)
+}
+return pop
+```
+
+The full process:
+
+```mermaid
+graph LR
+  init(Init)
+  survive(Survials)
+  select(Selection)
+  mutate(Mutation)
+  pool(New pool)
+  ender(End?)
+  start(Input population)
+
+  init --> start
+  start --> select --> mutate -->|add| pool
+  pool -->|continue| start
+  pool -->|done| survive --> ender
+  ender -->|yes| done(Done)
+  ender -->|use survivals as<br>input generation| start
 ```
