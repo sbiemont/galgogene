@@ -71,6 +71,14 @@ func (st SelectorTournament) Select(pop gene.Population) (gene.Individual, error
 
 // ------------------------------
 
+type SelectorElite struct{}
+
+func (SelectorElite) Select(pop gene.Population) (gene.Individual, error) {
+	return pop.Elite(), nil
+}
+
+// ------------------------------
+
 type ProbaSelector struct {
 	rate float64
 	sel  Selector

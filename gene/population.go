@@ -23,6 +23,7 @@ type PopulationStats struct {
 	TotalFitness  float64
 	TotalDuration time.Duration
 	GenerationNb  int
+	Elite         Individual
 }
 
 // FitnessFct defines the fitness function for a given individual
@@ -49,28 +50,42 @@ func NewPopulationFrom(size int, pop Population) Population {
 }
 
 // Init the population with random bits of the given size
-func (pop *Population) Init(bitsSize int) {
+func (pop *Population) Init(bitsSize int, maxValue uint8) {
 	for i := range pop.Individuals {
-		pop.Individuals[i].Code = NewBitsRandom(bitsSize)
+		pop.Individuals[i].Code = NewBitsRandom(bitsSize, maxValue)
 	}
 	pop.ComputeFitness()
 }
 
 // ComputeFitness computes an set all fitnesses for each individual
+// Compute
+//  * Individual fitness
+//  * Total fitness
+//  * Elite
 func (pop *Population) ComputeFitness() {
-	pop.Stats.TotalFitness = 0
+	pop.Stats.Elite = pop.Individuals[0]
 	for i, individual := range pop.Individuals {
 		fitness := pop.fitness(individual.Code)
 		pop.Individuals[i].Fitness = fitness
 		pop.Stats.TotalFitness += fitness
+		if individual.Fitness > pop.Stats.Elite.Fitness {
+			pop.Stats.Elite = individual
+		}
 	}
 }
 
 // ComputeTotalFitness restart computation of total fitness
+// Compute
+//  * Total fitness
+//  * Elite
 func (pop *Population) ComputeTotalFitness() {
 	pop.Stats.TotalFitness = 0
+	pop.Stats.Elite = pop.Individuals[0]
 	for _, individual := range pop.Individuals {
 		pop.Stats.TotalFitness += individual.Fitness
+		if individual.Fitness > pop.Stats.Elite.Fitness {
+			pop.Stats.Elite = individual
+		}
 	}
 }
 
@@ -83,13 +98,7 @@ func (pop Population) Sort() {
 
 // Sort population by highest fitness first
 func (pop Population) Elite() Individual {
-	var elite Individual = pop.Individuals[0]
-	for _, invididual := range pop.Individuals {
-		if invididual.Fitness > elite.Fitness {
-			elite = invididual
-		}
-	}
-	return elite
+	return pop.Stats.Elite
 }
 
 // First extracts k first Individuals of the current population
@@ -106,4 +115,13 @@ func (pop Population) Last(k int) Population {
 		Individuals: pop.Individuals[len(pop.Individuals)-k:],
 		fitness:     pop.fitness,
 	}
+}
+
+// MapCount counts the number of different fitnesses
+func (pop Population) MapCount() int {
+	count := make(map[float64]interface{})
+	for _, individual := range pop.Individuals {
+		count[individual.Fitness] = nil
+	}
+	return len(count)
 }

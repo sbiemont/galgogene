@@ -17,18 +17,28 @@ type Engine struct {
 }
 
 func (eng Engine) Run(popSize, bitsSize int, fitness gene.FitnessFct) (gene.Population, operator.Ender, error) {
+	return eng.RunWithMaxValue(popSize, bitsSize, 0x01, fitness)
+}
+
+func (eng Engine) RunWithMaxValue(
+	popSize,
+	bitsSize int,
+	maxValue uint8,
+	fitness gene.FitnessFct,
+) (gene.Population, operator.Ender, error) {
 	if err := eng.check(); err != nil {
 		return gene.Population{}, nil, err
 	}
 
 	// Init new pop
 	population := gene.NewPopulation(popSize, fitness)
-	population.Init(bitsSize)
+	population.Init(bitsSize, maxValue)
 	eng.onNewGeneration(population)
 
 	// Run until an ending condition is found
 	var ender operator.Ender
 	for ; ender == nil; ender = eng.Ender.End(population) {
+		time.Sleep(50 * time.Nanosecond)
 		// New generation
 		var err error
 		population, err = eng.nextGeneration(population)
