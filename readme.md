@@ -60,10 +60,11 @@ Once individuals have been chosen, apply a mutation like a cross-over or a simpl
 
 mutator | description | parameters
 -------- | ----------- | ----------
-`OnePointCrossOver` |  performs a cross-over with 1 randomly chosen point
-`TwoPointsCrossOver` |  performs a cross-over with 2 randomly chosen points
-`UniformCrossOver` |  performs a bit by bit cross-over from both parents with an equal probability of beeing chosen
-`Mutate` |  defines a random mutation of bits | `Rate`: mutation rate in [0 ; 1] (each bit has a chance to be changed)
+`OnePointCrossOver` | cross-over with 1 randomly chosen point
+`TwoPointsCrossOver` | cross-over with 2 randomly chosen points
+`UniformCrossOver` | bit by bit cross-over from both parents with an equal probability of beeing chosen
+`Mutate` | random mutation of bits | `Rate`: mutation rate in [0 ; 1] (each bit has a chance to be changed, but it can be left unchanged)
+`Invert` | random invertion of bits | `Rate`: invertion rate in [0 ; 1] (once chosen, the bit will be inverted)
 
 ```go
 // New simple mutator
@@ -168,7 +169,7 @@ eng := Engine{
     operator.NewProbaSelector(0.5, operator.SelectorRoulette{}),            // 50% chance to use roulette selector
     operator.NewProbaSelector(1, operator.SelectorTournament{Fighters: 3}), // Otherwise, use tournament selector with 3 fighters
   },
-  Mutator: operator.MultiMutators{
+  Mutator: operator.MultiMutator{
     operator.NewProbaMutator(1, operator.UniformCrossOver{}),   // 100% chance to apply uniform cross-over
     operator.NewProbaMutator(0.1, operator.Mutate{Rate: 0.5}),  // 10% chance to also apply a mutation, eaach bit has 50% chance to be changed
   },

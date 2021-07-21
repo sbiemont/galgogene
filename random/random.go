@@ -1,22 +1,26 @@
 package random
 
-import "math/rand"
+import (
+	"math/rand"
+	"sort"
+)
 
 // Ints builds an ordered list of k random integers in [min ; max[
 func Ints(min, max, k int) []int {
+	dm := max - min
 	result := make([]int, k)
-	last := min
 	for i := 0; i < k; i++ {
-		rd := inRangeInt(last, max)
-		result[i] = rd
-		last = rd
+		result[i] = rand.Intn(dm) + min
 	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i] < result[j]
+	})
 	return result
 }
 
-// Bit returns a random bit 0 or 1
-func Bit() uint8 {
-	return uint8(rand.Intn(2))
+// Bit returns a random byte in [0 ; 255]
+func Byte() uint8 {
+	return uint8(rand.Intn(256))
 }
 
 // Peek checks if the random generated rate in [0 ; 1[ matches the given one
@@ -27,11 +31,4 @@ func Peek(rate float64) bool {
 // Percent returns a random percentage in [0 ; 1[
 func Percent() float64 {
 	return rand.Float64()
-}
-
-func inRangeInt(min, max int) int {
-	if min == max {
-		return min
-	}
-	return rand.Intn(max-min) + min
 }

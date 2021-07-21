@@ -21,9 +21,10 @@ type SurvivorAddParentsElite struct {
 }
 
 func (svr SurvivorAddParentsElite) Survive(parents gene.Population, survivors *gene.Population) {
+	// if K is 0, keep the same number of initial population
+	k := populationSize(svr.K, parents)
 	parents.Sort()
-	elite := parents.First(svr.K)
-	survivors.Individuals = append(survivors.Individuals, elite.Individuals...)
+	survivors.Individuals = append(survivors.Individuals, parents.First(k).Individuals...)
 }
 
 // SurvivorElite only selects the K elite from the surviving population
@@ -33,13 +34,10 @@ type SurvivorElite struct {
 }
 
 func (svr SurvivorElite) Survive(parents gene.Population, survivors *gene.Population) {
-	k := svr.K
-	if k == 0 {
-		k = len(parents.Individuals) // if K is 0, keep the same number of initial population
-	}
+	// if K is 0, keep the same number of initial population
+	k := populationSize(svr.K, parents)
 	survivors.Sort()
-	tmp := (*survivors).First(k)
-	survivors.Individuals = tmp.Individuals
+	survivors.Individuals = (*survivors).First(k).Individuals
 }
 
 // MultiSurvivor defines a list of **ordered** surviving actions
@@ -49,4 +47,12 @@ func (svr MultiSurvivor) Survive(parents gene.Population, survivors *gene.Popula
 	for _, s := range svr {
 		s.Survive(parents, survivors)
 	}
+}
+
+// populationSize first get k or, if zero, the given population size
+func populationSize(k int, pop gene.Population) int {
+	if k == 0 {
+		return len(pop.Individuals)
+	}
+	return k
 }

@@ -6,16 +6,25 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func newIndividual(bits []uint8) Individual {
+	return Individual{
+		Code: Bits{
+			Raw:      bits,
+			MaxValue: DefaultMaxValue,
+		},
+	}
+}
+
 func TestPopulation(t *testing.T) {
 	Convey("population", t, func() {
-		ind1 := Individual{Code: Bits{1, 1, 1, 1, 1, 1, 1, 1}}
-		ind2 := Individual{Code: Bits{0, 0, 0, 0, 0, 0, 0, 0}}
-		ind3 := Individual{Code: Bits{1, 0, 0, 0, 0, 0, 0, 0}}
-		ind4 := Individual{Code: Bits{1, 1, 0, 0, 0, 0, 0, 0}}
+		ind1 := newIndividual([]uint8{1, 1, 1, 1, 1, 1, 1, 1})
+		ind2 := newIndividual([]uint8{0, 0, 0, 0, 0, 0, 0, 0})
+		ind3 := newIndividual([]uint8{1, 0, 0, 0, 0, 0, 0, 0})
+		ind4 := newIndividual([]uint8{1, 1, 0, 0, 0, 0, 0, 0})
 
 		fitness := func(b Bits) float64 {
 			var sum float64
-			for _, bit := range b {
+			for _, bit := range b.Raw {
 				sum += float64(bit)
 			}
 			return sum
