@@ -1,9 +1,6 @@
 package gene
 
 import (
-	"errors"
-	"fmt"
-
 	"genalgo.git/random"
 )
 
@@ -33,27 +30,6 @@ func NewBitsRandom(size int, maxValue uint8) Bits {
 	}
 	for i := 0; i < size; i++ {
 		result.Raw[i] = result.modulo(random.Byte())
-	}
-	return result
-}
-
-// NewBitsFromBytes builds a list of bits from an array of bytes
-func NewBitsFromBytes(bytes []byte) Bits {
-	result := Bits{
-		Raw:      make([]uint8, 8*len(bytes)),
-		MaxValue: DefaultMaxValue,
-	}
-	var i int
-	for _, b := range bytes {
-		result.Raw[i] = b & 0x80 >> 7
-		result.Raw[i+1] = b & 0x40 >> 6
-		result.Raw[i+2] = b & 0x20 >> 5
-		result.Raw[i+3] = b & 0x10 >> 4
-		result.Raw[i+4] = b & 0x08 >> 3
-		result.Raw[i+5] = b & 0x04 >> 2
-		result.Raw[i+6] = b & 0x02 >> 1
-		result.Raw[i+7] = b & 0x01
-		i += 8
 	}
 	return result
 }
@@ -89,31 +65,4 @@ func (bits Bits) modulo(value uint8) uint8 {
 	}
 
 	return value % (bits.MaxValue + 1)
-}
-
-// GroupBitsBy fetches bits by group and builds uint8 values
-// Unfield bits are let at 0
-//  eg.:
-//  * GroupBitsBy(2) groups every 2 bits into 1 uint8 (0b000000xx)
-//  * GroupBitsBy(4) groups every 4 bits into 1 uint8 (0b0000xxxx)
-func (bits Bits) GroupBitsBy(n int) ([]uint8, error) {
-	if bits.Len()%n != 0 {
-		return nil, fmt.Errorf("cannot group, total nb of bits (%d) should be modulo %d", bits.Len(), n)
-	}
-	if n > 8 {
-		return nil, errors.New("cannot group, n > 8")
-	}
-
-	// Group
-	result := make([]uint8, bits.Len()/n)
-	r := 0
-	for i := 0; i < bits.Len(); i += n {
-		var c uint8
-		for k := 0; k < n; k++ {
-			c |= bits.Raw[i+k] << (n - k - 1)
-		}
-		result[r] = c
-		r++
-	}
-	return result, nil
 }

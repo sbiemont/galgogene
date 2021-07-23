@@ -13,9 +13,11 @@ import (
 
 // Example with multi criteria for
 func TestStringMatcher(t *testing.T) {
+	szr, _ := gene.NewSerializer(8)
+
 	Convey("multi string matcher", t, func() {
 		targetStr := "This is my first genetic algorithm using multi string matcher!"
-		targetBits := gene.NewBitsFromBytes([]byte(targetStr))
+		targetBits := szr.ToBits([]byte(targetStr))
 		bitsSize := targetBits.Len()
 
 		// Fitness: match the input string bit by bit
@@ -52,12 +54,13 @@ func TestStringMatcher(t *testing.T) {
 			},
 			OnNewGeneration: func(pop gene.Population) {
 				elite := pop.Elite()
+				bytes, _ := szr.ToBytes(elite.Code)
 				fmt.Printf(
 					"Generation #%d, fit: %f, tot: %f, str: %s\n",
 					pop.Stats.GenerationNb,
 					elite.Fitness,
 					pop.Stats.TotalFitness,
-					bitsToString(elite.Code),
+					string(bytes),
 				)
 			},
 		}
