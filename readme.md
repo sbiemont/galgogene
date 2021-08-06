@@ -25,28 +25,28 @@ Before creating an engine, operators have to be defined:
 
 This operator is used to select individuals from the population, each time the selection process is triggered.
 
-selector | description | parameters
+selection | description | parameters
 -------- | ----------- | ----------
-`SelectorRoulette` | Fitness proportionate selection
-`SelectorTournament` | Select *K* fighters and keep the best one | `Fighters`: number of fighters in a tournament
+`SelectionRoulette` | Fitness proportionate selection
+`SelectionTournament` | Select *K* fighters and keep the best one | `Fighters`: number of fighters in a tournament
 
 ```go
-// New simple selector
-selector := operator.SelectorRoulette{}
+// New simple selection
+selection := operator.SelectionRoulette{}
 ```
 
-It is also possible to have an **ordered** list of selectors using `MultiSelector`.
-Each selector has a probability to be used: if the first selector is not chosen, try the second one and so on.
-If no selector has been chosen, an error will be raised by the `Engine`.
-Use the `NewMultiSelector()` for consistency to avoid any further error.
+It is also possible to have an **ordered** list of selections using `MultiSelection`.
+Each selection has a probability to be used: if the first selection is not chosen, try the second one and so on.
+If no selection has been chosen, an error will be raised by the `Engine`.
+Use the `NewMultiSelection()` for consistency to avoid any further error.
 
-For example, create a `Multiselector`:
+For example, create a `Multiselection`:
 
 ```go
-// New multi selector
-selector, err := operator.NewMultiSelector([]operator.ProbaSelector{
-  operator.NewProbaSelector(0.5, operator.SelectorRoulette{}),            // 50% chance to use wheel roulette selection
-  operator.NewProbaSelector(1, operator.SelectorTournament{Fighters: 3}), // Otherwise, use tournament selection
+// New multi selection
+selection, err := operator.NewMultiSelection([]operator.ProbaSelection{
+  operator.NewProbaSelection(0.5, operator.SelectionRoulette{}),            // 50% chance to use wheel roulette selection
+  operator.NewProbaSelection(1, operator.SelectionTournament{Fighters: 3}), // Otherwise, use tournament selection
 })
 
 if err != nil{
@@ -151,7 +151,7 @@ Define minimalistic operators for an engine, without the custom action.
 
 ```go
 eng := engine.Engine{
-  Selector: operator.SelectorRoulette{},                // Simple selector
+  Selection: operator.SelectionRoulette{},                // Simple selection
   Mutator:  operator.UniformCrossOver{},                // Simple mutator
   Survivor: operator.SurvivorElite{},                   // Simple survivor (with default parameter)
   Termination:    &operator.TerminationAboveFitness{Fitness: 1.0},  // Simple termination condition
@@ -164,9 +164,9 @@ Define all multi operators with a custom user action.
 
 ```go
 eng := Engine{
-  Selector: operator.MultiSelector{
-    operator.NewProbaSelector(0.5, operator.SelectorRoulette{}),            // 50% chance to use roulette selector
-    operator.NewProbaSelector(1, operator.SelectorTournament{Fighters: 3}), // Otherwise, use tournament selector with 3 fighters
+  Selection: operator.MultiSelection{
+    operator.NewProbaSelection(0.5, operator.SelectionRoulette{}),            // 50% chance to use roulette selection
+    operator.NewProbaSelection(1, operator.SelectionTournament{Fighters: 3}), // Otherwise, use tournament selection with 3 fighters
   },
   Mutator: operator.MultiMutator{
     operator.NewProbaMutator(1, operator.UniformCrossOver{}),   // 100% chance to apply uniform cross-over

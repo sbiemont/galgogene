@@ -34,9 +34,9 @@ func TestStringMatcher(t *testing.T) {
 		popSize := 100
 
 		eng := engine.Engine{
-			Selector: operator.MultiSelector{
-				operator.NewProbaSelector(0.5, operator.SelectorRoulette{}),            // 50% chance to get roulette
-				operator.NewProbaSelector(1, operator.SelectorTournament{Fighters: 2}), // otherwise, use tournament
+			Selection: operator.MultiSelection{
+				operator.NewProbaSelection(0.5, operator.SelectionRoulette{}),            // 50% chance to get roulette
+				operator.NewProbaSelection(1, operator.SelectionTournament{Fighters: 2}), // otherwise, use tournament
 			},
 			Mutator: operator.MultiMutator{
 				operator.NewProbaMutator(1, operator.UniformCrossOver{}),   // 100% chance to apply uniform cross-over

@@ -9,7 +9,7 @@ import (
 )
 
 type Engine struct {
-	Selector        operator.Selector
+	Selection       operator.Selection
 	Mutator         operator.Mutator
 	Survivor        operator.Survivor
 	Termination     operator.Termination
@@ -70,11 +70,11 @@ func (eng Engine) nextGeneration(parents gene.Population) (gene.Population, erro
 
 	for i := 0; i < popSize; i++ {
 		// Select 2 individuals
-		ind1, err1 := eng.Selector.Select(parents)
+		ind1, err1 := eng.Selection.Select(parents)
 		if err1 != nil {
 			return gene.Population{}, err1
 		}
-		ind2, err2 := eng.Selector.Select(parents)
+		ind2, err2 := eng.Selection.Select(parents)
 		if err2 != nil {
 			return gene.Population{}, err2
 		}
@@ -97,8 +97,8 @@ func (eng Engine) nextGeneration(parents gene.Population) (gene.Population, erro
 }
 
 func (eng Engine) check() error {
-	if eng.Selector == nil {
-		return errors.New("selector must be set")
+	if eng.Selection == nil {
+		return errors.New("selection must be set")
 	}
 
 	if eng.Mutator == nil {
