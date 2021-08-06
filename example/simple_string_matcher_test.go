@@ -32,12 +32,12 @@ func TestSimpleStringMatcher(t *testing.T) {
 		}
 
 		// Engine will stop when max fitness is reached
-		perfectFitness := &operator.EnderAboveFitness{Fitness: 1.0}
+		perfectFitness := &operator.TerminationAboveFitness{Fitness: 1.0}
 		eng := engine.Engine{
-			Selector: operator.SelectorRoulette{},
-			Mutator:  operator.UniformCrossOver{},
-			Survivor: operator.SurvivorElite{},
-			Ender:    perfectFitness,
+			Selector:    operator.SelectorRoulette{},
+			Mutator:     operator.UniformCrossOver{},
+			Survivor:    operator.SurvivorElite{},
+			Termination: perfectFitness,
 			OnNewGeneration: func(pop gene.Population) {
 				elite := pop.Elite()
 				bytes, _ := szr.ToBytes(elite.Code)
@@ -54,9 +54,9 @@ func TestSimpleStringMatcher(t *testing.T) {
 
 		// Run and check output
 		popSize := 100
-		last, ender, err := eng.Run(popSize, bitsSize, fitness)
+		last, termination, err := eng.Run(popSize, bitsSize, fitness)
 		So(err, ShouldBeNil)
-		So(ender, ShouldEqual, perfectFitness)
+		So(termination, ShouldEqual, perfectFitness)
 		So(last.Individuals, ShouldHaveLength, popSize)
 	})
 }

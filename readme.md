@@ -19,7 +19,7 @@ Before creating an engine, operators have to be defined:
 * [Selection](#selection-operator): selection method to fetch one individual from the population
 * [Mutation](#mutation-operator): mutation method applied on the chosen individuals
 * [Survivor](#survivor-operator): mutated individuals are added of the new pool, only select some "survivors"
-* [Ender](#ender-operator): ending conditions
+* [Termination](#termination-operator): ending conditions
 
 ### Selection operator
 
@@ -113,31 +113,30 @@ survivor := operator.MultiSurvivor{
 }
 ```
 
-### Ender operator
+### Termination operator
 
 Define an ending operator that check if processing can be stopped.
 
-ender | description | parameters
+termination | description | parameters
 ----- | ----------- | ----------
-`EnderGeneration` | should end processing when the *K*<sup>th</sup> generation is reached | `K`: max generation to be reached
-`EnderImprovement` | should end processing when the total fitness has not increased since the previous generation
-`EnderAboveFitness` | should end processing when the elite reaches the defined fitness | `Fitness`: min fitness
-`EnderBelowFitness` | should end processing when the elite reaches the defined fitness | `Fitness`: max fitness
-`EnderDuration` | should end processing when the total duration of each generation reaches a maximum | `Duration`: max duration
+`TerminationGeneration` | should end processing when the *K*<sup>th</sup> generation is reached | `K`: max generation to be reached
+`TerminationImprovement` | should end processing when the total fitness has not increased since the previous generation
+`TerminationAboveFitness` | should end processing when the elite reaches the defined fitness | `Fitness`: min fitness
+`TerminationDuration` | should end processing when the total duration of each generation reaches a maximum | `Duration`: max duration
 
 ```go
-// New simple ender operator
-ender := operator.EnderGeneration{K: 50}
+// New simple termination operator
+termination := operator.TerminationGeneration{K: 50}
 ```
 
-It is also possible to check a list of possible ending conditions, using a `MultiEnder`.
+It is also possible to check a list of possible ending conditions, using a `MultiTermination`.
 
 ```go
-// New multi ender operator
-ender := operator.MultiEnder{
-  operator.EnderGeneration{K: 50},                    // Check if generation #50 is reached
-  operator.EnderAboveFitness{Fitness: 1},             // Check if Fitness=1 is reached
-  operator.EnderDuration{Duration: 10 * time.Second}, // Check that the sum of computation time of each generation is limited to 10s
+// New multi termination operator
+termination := operator.MultiTermination{
+  operator.TerminationGeneration{K: 50},                    // Check if generation #50 is reached
+  operator.TerminationAboveFitness{Fitness: 1},             // Check if Fitness=1 is reached
+  operator.TerminationDuration{Duration: 10 * time.Second}, // Check that the sum of computation time of each generation is limited to 10s
 }
 ```
 
@@ -155,7 +154,7 @@ eng := engine.Engine{
   Selector: operator.SelectorRoulette{},                // Simple selector
   Mutator:  operator.UniformCrossOver{},                // Simple mutator
   Survivor: operator.SurvivorElite{},                   // Simple survivor (with default parameter)
-  Ender:    &operator.EnderAboveFitness{Fitness: 1.0},  // Simple ender
+  Termination:    &operator.TerminationAboveFitness{Fitness: 1.0},  // Simple termination condition
 }
 ```
 
@@ -177,11 +176,11 @@ eng := Engine{
     operator.SurvivorAddParentsElite{K: 2}, // Add 2 elite parent's individuals to the new generation
     operator.SurvivorElite{},               // Then, only keep best individuals to create the new population
   },
-  Ender: operator.MultiEnder{
-    &operator.EnderGeneration{K: 50},               // Stop at generation #50
-    &operator.EnderImprovement{},                   // Or stop if total fitness has not been improved
-    &operator.EnderAboveFitness{Fitness: 1},        // Or stop if Fitness=1 is reached
-    &operator.EnderDuration{Duration: time.Second}, // Or stop if total computation time of generations has reached 1s
+  Termination: operator.MultiTermination{
+    &operator.TerminationGeneration{K: 50},               // Stop at generation #50
+    &operator.TerminationImprovement{},                   // Or stop if total fitness has not been improved
+    &operator.TerminationAboveFitness{Fitness: 1},        // Or stop if Fitness=1 is reached
+    &operator.TerminationDuration{Duration: time.Second}, // Or stop if total computation time of generations has reached 1s
   },
   OnNewGeneration: func(pop gene.Population) { // OnNewGeneration is called each time a new generation is produced
     elite := pop.Elite()
@@ -209,9 +208,9 @@ var fitness gene.FitnessFct = func(bits gene.Bits) float64 {
   return 1
 }
 
-last, ender, err := eng.Run(popSize, bitsSize, fitness)
+last, termination, err := eng.Run(popSize, bitsSize, fitness)
 // err:   not nil if an error occurred
-// ender: the ending condition used to stop processing (can be ignored)
+// termination: the termination condition used to stop processing (can be ignored)
 // last:  the last generation
 ```
 
@@ -245,13 +244,13 @@ graph LR
   select(Selection)
   mutate(Mutation)
   pool(New pool)
-  ender(End?)
+  termination(End?)
   start(Input population)
 
   init --> start
   start --> select --> mutate -->|add| pool
   pool -->|continue| start
-  pool -->|done| survive --> ender
-  ender -->|yes| done(Done)
-  ender -->|use survivals as<br>input generation| start
+  pool -->|done| survive --> termination
+  termination -->|yes| done(Done)
+  termination -->|use survivals as<br>input generation| start
 ```
