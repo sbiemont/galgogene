@@ -5,8 +5,8 @@ import (
 	"genalgo.git/random"
 )
 
-// Mutator defines the method to be used for mutating a selection of 2 set of bits
-type Mutator interface {
+// CrossOver defines the method to be used for mutating a selection of 2 set of bits
+type CrossOver interface {
 	// Mate 2 codes to generate 2 new codes (with the same size)
 	Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits)
 }
@@ -38,78 +38,35 @@ func (UniformCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 
 // ------------------------------
 
-// Mutate defines a random mutation of bits (with a rate in [0 ; 1])
-// * 0: no mutation will happen
-// * 1: all bits **may** be mutated
-type Mutate struct {
-	Rate float64 // The mutation rate on the current bits
+// ProbaCrossOver is a probabilistic crossover
+type ProbaCrossOver struct {
+	rate float64   // Crossover rate
+	co   CrossOver // Crossover operator
 }
 
-// Mate will mutate the first set of bits and leave the second one unchanged
-func (mut Mutate) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
-	return mutate(bits1, mut.Rate, func(bits gene.Bits, _ int) uint8 {
-		return bits.Rand()
-	}), bits2
-}
-
-// ------------------------------
-
-// Invert defines a random invertion of bits (with a rate in [0 ; 1])
-// * 0: no invertion will happen
-// * 1: all bits are inverted
-type Invert struct {
-	Rate float64 // The invertion rate on the current bits
-}
-
-// Mate will invert the first set of bits and leave the second one unchanged
-func (mut Invert) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
-	return mutate(bits1, mut.Rate, func(bits gene.Bits, i int) uint8 {
-		return bits.Invert(i)
-	}), bits2
-}
-
-// ------------------------------
-
-// ProbaMutator is a probabilistic mutator
-type ProbaMutator struct {
-	rate float64 // Mutation rate
-	mut  Mutator // Mutation operator
-}
-
-// NewProbaMutator build a new full instance of ProbaMutator
-func NewProbaMutator(rate float64, mut Mutator) ProbaMutator {
-	return ProbaMutator{
+// NewProbaCrossOver build a new full instance of ProbaCrossOver
+func NewProbaCrossOver(rate float64, co CrossOver) ProbaCrossOver {
+	return ProbaCrossOver{
 		rate: rate,
-		mut:  mut,
+		co:   co,
 	}
 }
 
-// MultiMutator defines a serie of mutators with a specific probability of beeing chosen.
-// All or no mutators may be applied
-type MultiMutator []ProbaMutator
+// MultiCrossOver defines a serie of crossovers with a specific probability of beeing chosen.
+// All or no crossovers may be applied
+type MultiCrossOver []ProbaCrossOver
 
-func (mm MultiMutator) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
+func (mco MultiCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 	res1, res2 := bits1, bits2
-	for _, m := range mm {
+	for _, m := range mco {
 		if random.Peek(m.rate) {
-			res1, res2 = m.mut.Mate(res1, res2)
+			res1, res2 = m.co.Mate(res1, res2)
 		}
 	}
 	return res1, res2
 }
 
 // ------------------------------
-
-// mutate inverts some bits using a mutation rate
-func mutate(bits gene.Bits, rate float64, fct func(gene.Bits, int) uint8) gene.Bits {
-	result := bits.Clone()
-	for i := 0; i < result.Len(); i++ {
-		if random.Peek(rate) {
-			result.Raw[i] = fct(result, i)
-		}
-	}
-	return result
-}
 
 // crossOver bits #1 with #2 using an ordered list of indexes
 // Returns the 2 resulting set of bits

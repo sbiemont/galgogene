@@ -6,17 +6,19 @@ import (
 
 	"genalgo.git/gene"
 	"genalgo.git/operator"
+	"genalgo.git/random"
 )
 
 type Engine struct {
-	Selector        operator.Selector
-	Mutator         operator.Mutator
+	Selection       operator.Selection
+	CrossOver       operator.CrossOver
+	Mutation        operator.Mutation
 	Survivor        operator.Survivor
-	Ender           operator.Ender
+	Termination     operator.Termination
 	OnNewGeneration func(gene.Population)
 }
 
-func (eng Engine) Run(popSize, bitsSize int, fitness gene.FitnessFct) (gene.Population, operator.Ender, error) {
+func (eng Engine) Run(popSize, bitsSize int, fitness gene.FitnessFct) (gene.Population, operator.Termination, error) {
 	return eng.RunWithMaxValue(popSize, bitsSize, 0x01, fitness)
 }
 
@@ -25,7 +27,7 @@ func (eng Engine) RunWithMaxValue(
 	bitsSize int,
 	maxValue uint8,
 	fitness gene.FitnessFct,
-) (gene.Population, operator.Ender, error) {
+) (gene.Population, operator.Termination, error) {
 	if err := eng.check(); err != nil {
 		return gene.Population{}, nil, err
 	}
@@ -36,8 +38,8 @@ func (eng Engine) RunWithMaxValue(
 	eng.onNewGeneration(population)
 
 	// Run until an ending condition is found
-	var ender operator.Ender
-	for ; ender == nil; ender = eng.Ender.End(population) {
+	var termination operator.Termination
+	for ; termination == nil; termination = eng.Termination.End(population) {
 		time.Sleep(50 * time.Nanosecond)
 		// New generation
 		var err error
@@ -50,7 +52,7 @@ func (eng Engine) RunWithMaxValue(
 		eng.onNewGeneration(population)
 	}
 
-	return population, ender, nil
+	return population, termination, nil
 }
 
 // onNewGeneration calls the user method (only if defined)
@@ -70,17 +72,28 @@ func (eng Engine) nextGeneration(parents gene.Population) (gene.Population, erro
 
 	for i := 0; i < popSize; i++ {
 		// Select 2 individuals
-		ind1, err1 := eng.Selector.Select(parents)
+		ind1, err1 := eng.Selection.Select(parents)
 		if err1 != nil {
 			return gene.Population{}, err1
 		}
-		ind2, err2 := eng.Selector.Select(parents)
+		ind2, err2 := eng.Selection.Select(parents)
 		if err2 != nil {
 			return gene.Population{}, err2
 		}
 
-		// Mutate and add to the new population
-		mut1, mut2 := eng.Mutator.Mate(ind1.Code, ind2.Code)
+		// Crossover
+		mut1, mut2 := eng.CrossOver.Mate(ind1.Code, ind2.Code)
+
+		// Mutation
+		if eng.Mutation != nil {
+			if random.Peek(0.5) {
+				mut1 = eng.Mutation.Mutate(mut1)
+			} else {
+				mut2 = eng.Mutation.Mutate(mut2)
+			}
+		}
+
+		// Add new individuals to the new generation
 		newPop.Individuals[2*i] = gene.NewIndividual(mut1)
 		newPop.Individuals[2*i+1] = gene.NewIndividual(mut2)
 	}
@@ -97,20 +110,20 @@ func (eng Engine) nextGeneration(parents gene.Population) (gene.Population, erro
 }
 
 func (eng Engine) check() error {
-	if eng.Selector == nil {
-		return errors.New("selector must be set")
+	if eng.Selection == nil {
+		return errors.New("selection must be set")
 	}
 
-	if eng.Mutator == nil {
-		return errors.New("mutator must be set")
+	if eng.CrossOver == nil {
+		return errors.New("crossover must be set")
 	}
 
 	if eng.Survivor == nil {
 		return errors.New("survivor must be set")
 	}
 
-	if eng.Ender == nil {
-		return errors.New("ender must be set")
+	if eng.Termination == nil {
+		return errors.New("termination must be set")
 	}
 
 	return nil

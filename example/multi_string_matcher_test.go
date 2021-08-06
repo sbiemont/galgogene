@@ -34,23 +34,26 @@ func TestStringMatcher(t *testing.T) {
 		popSize := 100
 
 		eng := engine.Engine{
-			Selector: operator.MultiSelector{
-				operator.NewProbaSelector(0.5, operator.SelectorRoulette{}),            // 50% chance to get roulette
-				operator.NewProbaSelector(1, operator.SelectorTournament{Fighters: 2}), // otherwise, use tournament
+			Selection: operator.MultiSelection{
+				operator.NewProbaSelection(0.5, operator.SelectionRoulette{}),            // 50% chance to get roulette
+				operator.NewProbaSelection(1, operator.SelectionTournament{Fighters: 2}), // otherwise, use tournament
 			},
-			Mutator: operator.MultiMutator{
-				operator.NewProbaMutator(1, operator.UniformCrossOver{}),   // 100% chance to apply uniform cross-over
-				operator.NewProbaMutator(0.05, operator.Mutate{Rate: 0.5}), // 5% chance to mutate (with 50% chance of changing each bits)
+			CrossOver: operator.MultiCrossOver{
+				operator.NewProbaCrossOver(0.5, operator.UniformCrossOver{}),   // 50% chance to apply uniform cross-over
+				operator.NewProbaCrossOver(0.9, operator.TwoPointsCrossOver{}), // 50% chance to apply uniform cross-over
+			},
+			Mutation: operator.MultiMutation{
+				operator.NewProbaMutation(0.05, operator.UniformMutation{}), // 5% chance to mutate (with 50% chance of changing each bits)
 			},
 			Survivor: operator.MultiSurvivor{
 				operator.SurvivorAddAllParents{}, // Add first all parents to the new generation pool
 				operator.SurvivorElite{},         // Then, only keey k best individual in new generation
 			},
-			Ender: operator.MultiEnder{
-				&operator.EnderGeneration{K: 100},              // End at generation #100
-				&operator.EnderImprovement{},                   // End when total fitness cannot be improved
-				&operator.EnderAboveFitness{Fitness: 1},        // End with perfect fitness
-				&operator.EnderDuration{Duration: time.Second}, // End after 1s
+			Termination: operator.MultiTermination{
+				&operator.TerminationGeneration{K: 100},              // End at generation #100
+				&operator.TerminationImprovement{},                   // End when total fitness cannot be improved
+				&operator.TerminationAboveFitness{Fitness: 1},        // End with perfect fitness
+				&operator.TerminationDuration{Duration: time.Second}, // End after 1s
 			},
 			OnNewGeneration: func(pop gene.Population) {
 				elite := pop.Elite()
@@ -66,9 +69,9 @@ func TestStringMatcher(t *testing.T) {
 		}
 
 		// Run and check output
-		last, ender, err := eng.Run(popSize, bitsSize, fitness)
+		last, termination, err := eng.Run(popSize, bitsSize, fitness)
 		So(err, ShouldBeNil)
-		So(ender, ShouldNotBeNil)
+		So(termination, ShouldNotBeNil)
 		So(last.Individuals, ShouldHaveLength, popSize)
 	})
 }
