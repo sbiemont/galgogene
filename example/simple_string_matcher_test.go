@@ -11,16 +11,13 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func bitsToString(bits gene.Bits) string {
-	bytes, _ := bits.GroupBitsBy(8)
-	return string(bytes)
-}
-
 func TestSimpleStringMatcher(t *testing.T) {
+	szr, _ := gene.NewSerializer(8)
+
 	Convey("simple string matcher bit by bit", t, func() {
 		rand.Seed(180)
 		targetStr := "This is my first genetic algorithm using simple string matcher!"
-		targetBits := gene.NewBitsFromBytes([]byte(targetStr))
+		targetBits := szr.ToBits([]byte(targetStr))
 		bitsSize := targetBits.Len()
 
 		// Fitness: match the input string bit by bit
@@ -43,13 +40,14 @@ func TestSimpleStringMatcher(t *testing.T) {
 			Ender:    perfectFitness,
 			OnNewGeneration: func(pop gene.Population) {
 				elite := pop.Elite()
+				bytes, _ := szr.ToBytes(elite.Code)
 				fmt.Printf(
 					"Generation #%d, dur: %s fit: %f, tot: %f, str: %s\n",
 					pop.Stats.GenerationNb,
 					pop.Stats.TotalDuration,
 					elite.Fitness,
 					pop.Stats.TotalFitness,
-					bitsToString(elite.Code),
+					string(bytes),
 				)
 			},
 		}
