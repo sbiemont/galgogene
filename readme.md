@@ -58,7 +58,7 @@ if err != nil{
 
 Once individuals have been chosen, apply a mutation like a cross-over or a simple random bits mutation.
 
-mutator | description | parameters
+mutation | description | parameters
 -------- | ----------- | ----------
 `OnePointCrossOver` | cross-over with 1 randomly chosen point
 `TwoPointsCrossOver` | cross-over with 2 randomly chosen points
@@ -67,11 +67,11 @@ mutator | description | parameters
 `Invert` | random invertion of bits | `Rate`: invertion rate in [0 ; 1] (once chosen, the bit will be inverted)
 
 ```go
-// New simple mutator
-mutator := operator.OnePointCrossOver{}
+// New simple mutation
+mutation := operator.OnePointCrossOver{}
 ```
 
-It is also possible to apply an **ordered** list of mutations using `MultiMutator`.
+It is also possible to apply an **ordered** list of mutations using `MultiMutation`.
 Each mutation has its own probability (in [0 ; 1]) of being applied.
 
 All mutations are triggered one by one, so, if probabilities are too small, it may possible to have no mutation applied and the unchanged individuals will be part of the next generation.
@@ -80,10 +80,10 @@ All mutations are triggered one by one, so, if probabilities are too small, it m
 * `1`: the mutation will **always** be applied
 
 ```go
-// New multi mutator
-mutator := operator.MultiMutator{
-  NewProbaMutator(0.5, operator.OnePointCrossOver{}), // 50% chance to use apply one point cross-over
-  NewProbaMutator(0.05, operator.Mutate{Rate: 0.4}),  // 5% chance for the mutation to happen with a bit rate of 40%
+// New multi mutation
+mutation := operator.MultiMutation{
+  NewProbaMutation(0.5, operator.OnePointCrossOver{}), // 50% chance to use apply one point cross-over
+  NewProbaMutation(0.05, operator.Mutate{Rate: 0.4}),  // 5% chance for the mutation to happen with a bit rate of 40%
 }
 ```
 
@@ -152,7 +152,7 @@ Define minimalistic operators for an engine, without the custom action.
 ```go
 eng := engine.Engine{
   Selection: operator.SelectionRoulette{},                // Simple selection
-  Mutator:  operator.UniformCrossOver{},                // Simple mutator
+  Mutation:  operator.UniformCrossOver{},                // Simple mutation
   Survivor: operator.SurvivorElite{},                   // Simple survivor (with default parameter)
   Termination:    &operator.TerminationAboveFitness{Fitness: 1.0},  // Simple termination condition
 }
@@ -168,9 +168,9 @@ eng := Engine{
     operator.NewProbaSelection(0.5, operator.SelectionRoulette{}),            // 50% chance to use roulette selection
     operator.NewProbaSelection(1, operator.SelectionTournament{Fighters: 3}), // Otherwise, use tournament selection with 3 fighters
   },
-  Mutator: operator.MultiMutator{
-    operator.NewProbaMutator(1, operator.UniformCrossOver{}),   // 100% chance to apply uniform cross-over
-    operator.NewProbaMutator(0.1, operator.Mutate{Rate: 0.5}),  // 10% chance to also apply a mutation, eaach bit has 50% chance to be changed
+  Mutation: operator.MultiMutation{
+    operator.NewProbaMutation(1, operator.UniformCrossOver{}),   // 100% chance to apply uniform cross-over
+    operator.NewProbaMutation(0.1, operator.Mutate{Rate: 0.5}),  // 10% chance to also apply a mutation, eaach bit has 50% chance to be changed
   },
   Survivor: operator.MultiSurvivor{
     operator.SurvivorAddParentsElite{K: 2}, // Add 2 elite parent's individuals to the new generation

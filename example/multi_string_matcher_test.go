@@ -38,9 +38,9 @@ func TestStringMatcher(t *testing.T) {
 				operator.NewProbaSelection(0.5, operator.SelectionRoulette{}),            // 50% chance to get roulette
 				operator.NewProbaSelection(1, operator.SelectionTournament{Fighters: 2}), // otherwise, use tournament
 			},
-			Mutator: operator.MultiMutator{
-				operator.NewProbaMutator(1, operator.UniformCrossOver{}),   // 100% chance to apply uniform cross-over
-				operator.NewProbaMutator(0.05, operator.Mutate{Rate: 0.5}), // 5% chance to mutate (with 50% chance of changing each bits)
+			Mutation: operator.MultiMutation{
+				operator.NewProbaMutation(1, operator.UniformCrossOver{}),   // 100% chance to apply uniform cross-over
+				operator.NewProbaMutation(0.05, operator.Mutate{Rate: 0.5}), // 5% chance to mutate (with 50% chance of changing each bits)
 			},
 			Survivor: operator.MultiSurvivor{
 				operator.SurvivorAddAllParents{}, // Add first all parents to the new generation pool

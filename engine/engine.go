@@ -10,7 +10,7 @@ import (
 
 type Engine struct {
 	Selection       operator.Selection
-	Mutator         operator.Mutator
+	Mutation        operator.Mutation
 	Survivor        operator.Survivor
 	Termination     operator.Termination
 	OnNewGeneration func(gene.Population)
@@ -80,7 +80,7 @@ func (eng Engine) nextGeneration(parents gene.Population) (gene.Population, erro
 		}
 
 		// Mutate and add to the new population
-		mut1, mut2 := eng.Mutator.Mate(ind1.Code, ind2.Code)
+		mut1, mut2 := eng.Mutation.Mate(ind1.Code, ind2.Code)
 		newPop.Individuals[2*i] = gene.NewIndividual(mut1)
 		newPop.Individuals[2*i+1] = gene.NewIndividual(mut2)
 	}
@@ -101,8 +101,8 @@ func (eng Engine) check() error {
 		return errors.New("selection must be set")
 	}
 
-	if eng.Mutator == nil {
-		return errors.New("mutator must be set")
+	if eng.Mutation == nil {
+		return errors.New("mutation must be set")
 	}
 
 	if eng.Survivor == nil {

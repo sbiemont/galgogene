@@ -35,7 +35,7 @@ func TestSimpleStringMatcher(t *testing.T) {
 		perfectFitness := &operator.TerminationAboveFitness{Fitness: 1.0}
 		eng := engine.Engine{
 			Selection:   operator.SelectionRoulette{},
-			Mutator:     operator.UniformCrossOver{},
+			Mutation:    operator.UniformCrossOver{},
 			Survivor:    operator.SurvivorElite{},
 			Termination: perfectFitness,
 			OnNewGeneration: func(pop gene.Population) {

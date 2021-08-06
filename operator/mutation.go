@@ -5,8 +5,8 @@ import (
 	"genalgo.git/random"
 )
 
-// Mutator defines the method to be used for mutating a selection of 2 set of bits
-type Mutator interface {
+// Mutation defines the method to be used for mutating a selection of 2 set of bits
+type Mutation interface {
 	// Mate 2 codes to generate 2 new codes (with the same size)
 	Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits)
 }
@@ -70,25 +70,25 @@ func (mut Invert) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 
 // ------------------------------
 
-// ProbaMutator is a probabilistic mutator
-type ProbaMutator struct {
-	rate float64 // Mutation rate
-	mut  Mutator // Mutation operator
+// ProbaMutation is a probabilistic mutation
+type ProbaMutation struct {
+	rate float64  // Mutation rate
+	mut  Mutation // Mutation operator
 }
 
-// NewProbaMutator build a new full instance of ProbaMutator
-func NewProbaMutator(rate float64, mut Mutator) ProbaMutator {
-	return ProbaMutator{
+// NewProbaMutation build a new full instance of ProbaMutation
+func NewProbaMutation(rate float64, mut Mutation) ProbaMutation {
+	return ProbaMutation{
 		rate: rate,
 		mut:  mut,
 	}
 }
 
-// MultiMutator defines a serie of mutators with a specific probability of beeing chosen.
-// All or no mutators may be applied
-type MultiMutator []ProbaMutator
+// MultiMutation defines a serie of mutations with a specific probability of beeing chosen.
+// All or no mutations may be applied
+type MultiMutation []ProbaMutation
 
-func (mm MultiMutator) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
+func (mm MultiMutation) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 	res1, res2 := bits1, bits2
 	for _, m := range mm {
 		if random.Peek(m.rate) {
