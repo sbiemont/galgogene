@@ -13,14 +13,49 @@ type Mutation interface {
 // ------------------------------
 
 // UniformMutation defines a random mutation of bits
-type UniformMutation struct {
-}
+type UniformMutation struct{}
 
-// Mate will mutate the first set of bits and leave the second one unchanged
-func (um UniformMutation) Mutate(bits gene.Bits) gene.Bits {
+// Mutate each bit with a probability of 50%
+func (UniformMutation) Mutate(bits gene.Bits) gene.Bits {
 	return mutate(bits, 0.5, func(b gene.Bits, _ int) uint8 {
 		return b.Rand()
 	})
+}
+
+// ------------------------------
+
+// SwapMutation defines a random swap of 2 bits
+type SwapMutation struct{}
+
+// Mutate select 2 positions and swap the values
+func (SwapMutation) Mutate(bits gene.Bits) gene.Bits {
+	pos := random.Ints(0, bits.Len(), 2)
+	pos1, pos2 := pos[0], pos[1]
+
+	result := bits.Clone()
+	result.Raw[pos1] = bits.Raw[pos2]
+	result.Raw[pos2] = bits.Raw[pos1]
+	return result
+}
+
+// ------------------------------
+
+// TwoSwapMutation picks 2 points and inverts the subtour
+type TwoSwapMutation struct{}
+
+// Mutate select 2 positions and inverts the subtour
+// eg.:
+//   * input:  AB.CDEF.GH
+//   * output: AB.FEDC.GH
+func (TwoSwapMutation) Mutate(bits gene.Bits) gene.Bits {
+	pos := random.Ints(0, bits.Len(), 2)
+	pos1, pos2 := pos[0], pos[1]
+
+	result := bits.Clone()
+	for i := pos1; i <= pos2; i++ {
+		result.Raw[i] = bits.Raw[pos2-i+pos1]
+	}
+	return result
 }
 
 // ------------------------------

@@ -36,6 +36,14 @@ func (UniformCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 	return uniformCrossOver(bits1, bits2, 0.5)
 }
 
+// DavisOrderCrossOver performs a Davis' order crossover (permutation)
+type DavisOrderCrossOver struct{}
+
+func (DavisOrderCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
+	pos := random.Ints(0, bits1.Len(), 2)
+	return davisOrderCrossOver(bits1, bits2, pos[0], pos[1]), davisOrderCrossOver(bits2, bits1, pos[0], pos[1])
+}
+
 // ------------------------------
 
 // ProbaCrossOver is a probabilistic crossover
@@ -128,4 +136,44 @@ func uniformCrossOver(bits1, bits2 gene.Bits, rate float64) (gene.Bits, gene.Bit
 	}
 
 	return res1, res2
+}
+
+func davisOrderCrossOver(bits1, bits2 gene.Bits, pos1, pos2 int) gene.Bits {
+	// Find unused value
+	sz := bits1.Len()
+	uniq := make(map[uint8]interface{})
+	var idx int
+	unusedValue := func() uint8 {
+		for idx < sz {
+			value := bits2.Raw[idx]
+			_, ok := uniq[value]
+			idx++
+			if !ok {
+				uniq[value] = nil
+				return value
+			}
+		}
+		return 0
+	}
+
+	res := gene.NewBits(sz, bits1.MaxValue)
+
+	// Copy range part
+	for i := pos1; i <= pos2; i++ {
+		value := bits1.Raw[i]
+		res.Raw[i] = value
+		uniq[value] = nil
+	}
+
+	// Fill begining with unused values
+	for i := 0; i < pos1; i++ {
+		res.Raw[i] = unusedValue()
+	}
+
+	// Fill ending with unused values
+	for i := pos2 + 1; i < sz; i++ {
+		res.Raw[i] = unusedValue()
+	}
+
+	return res
 }

@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"math/rand"
 	"testing"
 
 	"genalgo.git/gene"
@@ -8,7 +9,7 @@ import (
 )
 
 func TestCrossOvers(t *testing.T) {
-	Convey("cross over", t, func() {
+	Convey("crossover", t, func() {
 		bits1 := newBits([]uint8{1, 1, 1, 1, 1, 1, 1, 1})
 		bits2 := newBits([]uint8{0, 0, 0, 0, 0, 0, 0, 0})
 
@@ -59,7 +60,7 @@ func TestCrossOvers(t *testing.T) {
 		})
 	})
 
-	Convey("uniform cross over", t, func() {
+	Convey("uniform crossover", t, func() {
 		bits1 := newBits([]uint8{1, 1, 1, 1, 1, 1, 1, 1})
 		bits2 := newBits([]uint8{0, 0, 0, 0, 0, 0, 0, 0})
 
@@ -68,5 +69,21 @@ func TestCrossOvers(t *testing.T) {
 			So(res1, ShouldNotResemble, newBits([]uint8{1, 1, 1, 1, 1, 1, 1, 1}))
 			So(res2, ShouldNotResemble, newBits([]uint8{0, 0, 0, 0, 0, 0, 0, 0}))
 		})
+	})
+
+	Convey("davis' order crossover", t, func() {
+		bits1 := newBits([]uint8{1, 2, 3, 4, 5, 6, 7, 8, 9})
+		bits2 := newBits([]uint8{3, 4, 7, 2, 8, 9, 1, 6, 5})
+
+		// for i := 0; i < 100; i++ {
+		// 	rand.Seed(int64(i))
+		// 	DavisOrderCrossOver{}.Mate(bits1, bits2)
+		// }
+
+		rand.Seed(50)
+		res1, res2 := DavisOrderCrossOver{}.Mate(bits1, bits2)
+
+		So(res1, ShouldResemble, newBits([]uint8{3, 2, 8, 4, 5, 6, 7, 9, 1}))
+		So(res2, ShouldResemble, newBits([]uint8{3, 4, 5, 2, 8, 9, 1, 6, 7}))
 	})
 }

@@ -31,16 +31,15 @@ func TestStringMatcher(t *testing.T) {
 			return fitness / float64(bitsSize)
 		}
 
-		popSize := 100
-
 		eng := engine.Engine{
+			Initializer: gene.NewRandomInitializer(1),
 			Selection: operator.MultiSelection{
-				operator.NewProbaSelection(0.5, operator.SelectionRoulette{}),            // 50% chance to get roulette
-				operator.NewProbaSelection(1, operator.SelectionTournament{Fighters: 2}), // otherwise, use tournament
+				operator.NewProbaSelection(0.5, operator.SelectionTournament{Fighters: 2}), // 50% chance to use tournament
+				operator.NewProbaSelection(1, operator.SelectionRoulette{}),                // otherwise, use roulette
 			},
 			CrossOver: operator.MultiCrossOver{
-				operator.NewProbaCrossOver(0.5, operator.UniformCrossOver{}),   // 50% chance to apply uniform cross-over
-				operator.NewProbaCrossOver(0.9, operator.TwoPointsCrossOver{}), // 50% chance to apply uniform cross-over
+				operator.NewProbaCrossOver(0.1, operator.TwoPointsCrossOver{}), // 10% chance to apply 2 points crossover
+				operator.NewProbaCrossOver(1, operator.UniformCrossOver{}),     // 100% chance to apply uniform crossover
 			},
 			Mutation: operator.MultiMutation{
 				operator.NewProbaMutation(0.05, operator.UniformMutation{}), // 5% chance to mutate (with 50% chance of changing each bits)
@@ -69,6 +68,7 @@ func TestStringMatcher(t *testing.T) {
 		}
 
 		// Run and check output
+		popSize := 100
 		last, termination, err := eng.Run(popSize, bitsSize, fitness)
 		So(err, ShouldBeNil)
 		So(termination, ShouldNotBeNil)

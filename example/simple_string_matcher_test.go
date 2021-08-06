@@ -34,6 +34,7 @@ func TestSimpleStringMatcher(t *testing.T) {
 		// Engine will stop when max fitness is reached
 		perfectFitness := &operator.TerminationAboveFitness{Fitness: 1.0}
 		eng := engine.Engine{
+			Initializer: gene.NewRandomInitializer(1),
 			Selection:   operator.SelectionRoulette{},
 			CrossOver:   operator.UniformCrossOver{},
 			Survivor:    operator.SurvivorElite{},

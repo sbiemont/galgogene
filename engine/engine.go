@@ -6,10 +6,10 @@ import (
 
 	"genalgo.git/gene"
 	"genalgo.git/operator"
-	"genalgo.git/random"
 )
 
 type Engine struct {
+	Initializer     gene.Initializer
 	Selection       operator.Selection
 	CrossOver       operator.CrossOver
 	Mutation        operator.Mutation
@@ -18,14 +18,9 @@ type Engine struct {
 	OnNewGeneration func(gene.Population)
 }
 
-func (eng Engine) Run(popSize, bitsSize int, fitness gene.FitnessFct) (gene.Population, operator.Termination, error) {
-	return eng.RunWithMaxValue(popSize, bitsSize, 0x01, fitness)
-}
-
-func (eng Engine) RunWithMaxValue(
+func (eng Engine) Run(
 	popSize,
 	bitsSize int,
-	maxValue uint8,
 	fitness gene.FitnessFct,
 ) (gene.Population, operator.Termination, error) {
 	if err := eng.check(); err != nil {
@@ -33,8 +28,11 @@ func (eng Engine) RunWithMaxValue(
 	}
 
 	// Init new pop
-	population := gene.NewPopulation(popSize, fitness)
-	population.Init(bitsSize, maxValue)
+	population := gene.NewPopulation(popSize, fitness, eng.Initializer)
+	errInit := population.Init(bitsSize)
+	if errInit != nil {
+		return gene.Population{}, nil, errInit
+	}
 	eng.onNewGeneration(population)
 
 	// Run until an ending condition is found
@@ -80,17 +78,17 @@ func (eng Engine) nextGeneration(parents gene.Population) (gene.Population, erro
 		if err2 != nil {
 			return gene.Population{}, err2
 		}
+		mut1, mut2 := ind1.Code, ind2.Code
 
 		// Crossover
-		mut1, mut2 := eng.CrossOver.Mate(ind1.Code, ind2.Code)
+		if eng.CrossOver != nil {
+			mut1, mut2 = eng.CrossOver.Mate(mut1, mut2)
+		}
 
 		// Mutation
 		if eng.Mutation != nil {
-			if random.Peek(0.5) {
-				mut1 = eng.Mutation.Mutate(mut1)
-			} else {
-				mut2 = eng.Mutation.Mutate(mut2)
-			}
+			mut1 = eng.Mutation.Mutate(mut1)
+			mut2 = eng.Mutation.Mutate(mut2)
 		}
 
 		// Add new individuals to the new generation
