@@ -6,10 +6,12 @@ import (
 
 	"genalgo.git/gene"
 	"genalgo.git/operator"
+	"genalgo.git/random"
 )
 
 type Engine struct {
 	Selection       operator.Selection
+	CrossOver       operator.CrossOver
 	Mutation        operator.Mutation
 	Survivor        operator.Survivor
 	Termination     operator.Termination
@@ -79,8 +81,19 @@ func (eng Engine) nextGeneration(parents gene.Population) (gene.Population, erro
 			return gene.Population{}, err2
 		}
 
-		// Mutate and add to the new population
-		mut1, mut2 := eng.Mutation.Mate(ind1.Code, ind2.Code)
+		// Crossover
+		mut1, mut2 := eng.CrossOver.Mate(ind1.Code, ind2.Code)
+
+		// Mutation
+		if eng.Mutation != nil {
+			if random.Peek(0.5) {
+				mut1 = eng.Mutation.Mutate(mut1)
+			} else {
+				mut2 = eng.Mutation.Mutate(mut2)
+			}
+		}
+
+		// Add new individuals to the new generation
 		newPop.Individuals[2*i] = gene.NewIndividual(mut1)
 		newPop.Individuals[2*i+1] = gene.NewIndividual(mut2)
 	}
@@ -101,8 +114,8 @@ func (eng Engine) check() error {
 		return errors.New("selection must be set")
 	}
 
-	if eng.Mutation == nil {
-		return errors.New("mutation must be set")
+	if eng.CrossOver == nil {
+		return errors.New("crossover must be set")
 	}
 
 	if eng.Survivor == nil {

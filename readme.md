@@ -54,17 +54,38 @@ if err != nil{
 }
 ```
 
-### Mutation operator
+### CrossOver operator
 
-Once individuals have been chosen, apply a mutation like a cross-over or a simple random bits mutation.
+Once individuals have been chosen, apply a crossover on pairs of individuals to generate 2 new individuals.
 
-mutation | description | parameters
+crossover | description | parameters
 -------- | ----------- | ----------
 `OnePointCrossOver` | cross-over with 1 randomly chosen point
 `TwoPointsCrossOver` | cross-over with 2 randomly chosen points
 `UniformCrossOver` | bit by bit cross-over from both parents with an equal probability of beeing chosen
-`Mutate` | random mutation of bits | `Rate`: mutation rate in [0 ; 1] (each bit has a chance to be changed, but it can be left unchanged)
-`Invert` | random invertion of bits | `Rate`: invertion rate in [0 ; 1] (once chosen, the bit will be inverted)
+
+```go
+// New simple crossover
+crossover := operator.OnePointCrossOver{}
+```
+
+It is also possible to apply an **ordered** list of mutations using `MultiCrossOver`.
+
+```go
+// New multi crossover
+crossover := operator.MultiCrossOver{
+  NewProbaCrossOver(0.05, operator.UniformCrossOver{}), // 5% chance for the uniform crossover to happen
+  NewProbaCrossOver(1, operator.OnePointCrossOver{}),   // 100% chance for the one-point crossover to happen
+}
+```
+
+### Mutation operator
+
+Once crossover(s) have been applied, apply a mutation like a simple random bits change.
+
+mutation | description | parameters
+-------- | ----------- | ----------
+`UniformMutation` | random mutation of bits (each bit has 50% chance to be changed)
 
 ```go
 // New simple mutation
@@ -82,8 +103,7 @@ All mutations are triggered one by one, so, if probabilities are too small, it m
 ```go
 // New multi mutation
 mutation := operator.MultiMutation{
-  NewProbaMutation(0.5, operator.OnePointCrossOver{}), // 50% chance to use apply one point cross-over
-  NewProbaMutation(0.05, operator.Mutate{Rate: 0.4}),  // 5% chance for the mutation to happen with a bit rate of 40%
+  NewProbaMutation(0.05, operator.UniformMutation{}),  // 5% chance for the mutation to happen
 }
 ```
 
@@ -151,9 +171,9 @@ Define minimalistic operators for an engine, without the custom action.
 
 ```go
 eng := engine.Engine{
-  Selection: operator.SelectionRoulette{},                // Simple selection
-  Mutation:  operator.UniformCrossOver{},                // Simple mutation
-  Survivor: operator.SurvivorElite{},                   // Simple survivor (with default parameter)
+  Selection: operator.SelectionRoulette{},              // Simple selection
+  Mutation:  operator.UniformCrossOver{},               // Simple mutation
+  Survivor:  operator.SurvivorElite{},                  // Simple survivor (with default parameter)
   Termination:    &operator.TerminationAboveFitness{Fitness: 1.0},  // Simple termination condition
 }
 ```
@@ -168,10 +188,12 @@ eng := Engine{
     operator.NewProbaSelection(0.5, operator.SelectionRoulette{}),            // 50% chance to use roulette selection
     operator.NewProbaSelection(1, operator.SelectionTournament{Fighters: 3}), // Otherwise, use tournament selection with 3 fighters
   },
-  Mutation: operator.MultiMutation{
-    operator.NewProbaMutation(1, operator.UniformCrossOver{}),   // 100% chance to apply uniform cross-over
-    operator.NewProbaMutation(0.1, operator.Mutate{Rate: 0.5}),  // 10% chance to also apply a mutation, eaach bit has 50% chance to be changed
+  CrossOver: operator.MultiCrossOver{
+    operator.NewProbaCrossOver(1, operator.UniformCrossOver{}),   // 100% chance to apply uniform cross-over
   },
+  Mutation: operator.MultiMutation{
+    operator.NewProbaMutation(0.1, operator.UniformMutation{}),  // 10% chance to also apply a crossover, each bit has 50% chance to be changed
+  }
   Survivor: operator.MultiSurvivor{
     operator.SurvivorAddParentsElite{K: 2}, // Add 2 elite parent's individuals to the new generation
     operator.SurvivorElite{},               // Then, only keep best individuals to create the new population
@@ -242,13 +264,14 @@ graph LR
   init(Init)
   survive(Survials)
   select(Selection)
+  crossover(CrossOver)
   mutate(Mutation)
   pool(New pool)
   termination(End?)
   start(Input population)
 
   init --> start
-  start --> select --> mutate -->|add| pool
+  start --> select --> crossover --> mutate -->|add| pool
   pool -->|continue| start
   pool -->|done| survive --> termination
   termination -->|yes| done(Done)
