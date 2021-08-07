@@ -1,6 +1,7 @@
 package gene
 
 import (
+	"errors"
 	"sort"
 	"time"
 )
@@ -34,27 +35,41 @@ type Population struct {
 	Individuals []Individual
 	fitness     FitnessFct
 	Stats       PopulationStats
+	initializer Initializer
 }
 
 // NewPopulation init an empty population of n individuals with a fitness function
-func NewPopulation(size int, fitness FitnessFct) Population {
+func NewPopulation(size int, fitness FitnessFct, initializer Initializer) Population {
 	return Population{
 		Individuals: make([]Individual, size),
 		fitness:     fitness,
+		initializer: initializer,
 	}
 }
 
 // NewPopulationFrom init an empty population of n individuals with the fitness function of the specified population
 func NewPopulationFrom(size int, pop Population) Population {
-	return NewPopulation(size, pop.fitness)
+	return NewPopulation(size, pop.fitness, pop.initializer)
 }
 
 // Init the population with random bits of the given size
-func (pop *Population) Init(bitsSize int, maxValue uint8) {
+func (pop *Population) Init(bitsSize int) error {
+	if pop.initializer == nil {
+		return errors.New("initializer shall be set")
+	}
+
+	// Check only once
+	err := pop.initializer.Check(bitsSize)
+	if err != nil {
+		return err
+	}
+
+	// Full init
 	for i := range pop.Individuals {
-		pop.Individuals[i].Code = NewBitsRandom(bitsSize, maxValue)
+		pop.Individuals[i].Code = pop.initializer.Init(bitsSize)
 	}
 	pop.ComputeFitness()
+	return nil
 }
 
 // ComputeFitness computes an set all fitnesses for each individual
