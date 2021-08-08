@@ -56,25 +56,3 @@ func (init PermuationInitializer) Init(bitsSize int) Bits {
 	}
 	return result
 }
-
-// ------------------------------
-
-// // PermuationWithTemplateInitializer builds a list of shuffled permuations
-// type PermuationWithTemplateInitializer struct {
-// 	Template []uint8
-// }
-
-// func (init PermuationWithTemplateInitializer) Check(bitsSize int, _ uint8) error {
-// 	if bitsSize > math.MaxUint8 {
-// 		return errors.New("bitsSize too big")
-// 	}
-// 	return nil
-// }
-
-// func (init PermuationWithTemplateInitializer) Init(bitsSize int, _ uint8) Bits {
-// 	result := NewBits(bitsSize, uint8(bitsSize))
-// 	for i, value := range rand.Perm(bitsSize) {
-// 		result.Raw[i] = uint8(value)
-// 	}
-// 	return result
-// }
