@@ -4,7 +4,7 @@ Galgogene is a simple implementation of a [genetic algorithm](https://en.wikiped
 
 ## Roadmap
 
-* [ ] add examples
+* [ ] simplify survivors methods
 
 ## Getting started
 
@@ -25,7 +25,7 @@ Before creating an engine, operators have to be defined:
 
 ### Initializer operator
 
-Initializes a set of bits for a new individual (during )
+Initializes a set of bits for a new individual (during initialization step)
 
 initializer | description | parameters
 ----------- | ----------- | ----------
@@ -33,7 +33,8 @@ initializer | description | parameters
 `PermuationInitializer` | Builds a list of shuffled permuations
 
 ```go
-init := gene.PermuationInitializer{}
+// New random initializer with max value = 1
+init := gene.NewRandomInitializer(1),
 ```
 
 ### Selection operator
