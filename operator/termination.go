@@ -12,14 +12,6 @@ type Termination interface {
 	End(pop gene.Population) Termination
 }
 
-func condition(cond bool, termination Termination) Termination {
-	if cond {
-		return termination
-	}
-
-	return nil
-}
-
 // ------------------------------
 
 // TerminationGeneration should end processing when the ith generation is reached
@@ -36,13 +28,21 @@ func (end *TerminationGeneration) End(pop gene.Population) Termination {
 // TerminationImprovement should end processing when the total fitness
 // has not increased since the previous generation
 type TerminationImprovement struct {
+	K                    int // The number of generations with the same improvement (default: 1)
+	k                    int // The internal number of generations
 	previousTotalFitness float64
 }
 
 func (end *TerminationImprovement) End(pop gene.Population) Termination {
-	stop := end.previousTotalFitness == pop.Stats.TotalFitness
+	if end.previousTotalFitness == pop.Stats.TotalFitness {
+		end.k++ // one more generation with same fitness
+	} else {
+		end.k = 0 // reset
+	}
+
+	k := getDefault(end.K, 1)
 	end.previousTotalFitness = pop.Stats.TotalFitness
-	return condition(stop, end)
+	return condition(end.k >= k, end)
 }
 
 // ------------------------------
@@ -86,4 +86,23 @@ func (end MultiTermination) End(pop gene.Population) Termination {
 	}
 
 	return nil // no termination found
+}
+
+// ------------------------------
+
+// Helper, returns the termination if cond is true
+func condition(cond bool, termination Termination) Termination {
+	if cond {
+		return termination
+	}
+
+	return nil
+}
+
+// Helper, get the default value
+func getDefault(value, deflt int) int {
+	if value == 0 {
+		return deflt
+	}
+	return value
 }

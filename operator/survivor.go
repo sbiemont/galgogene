@@ -51,8 +51,5 @@ func (svr MultiSurvivor) Survive(parents gene.Population, survivors *gene.Popula
 
 // populationSize first get k or, if zero, the given population size
 func populationSize(k int, pop gene.Population) int {
-	if k == 0 {
-		return len(pop.Individuals)
-	}
-	return k
+	return getDefault(k, len(pop.Individuals))
 }

@@ -25,15 +25,28 @@ func TestTerminations(t *testing.T) {
 		})
 
 		Convey("when improvement termination", func() {
-			termination := TerminationImprovement{}
-			pop := gene.Population{Stats: gene.PopulationStats{TotalFitness: 42}}
-			So(termination.End(pop), ShouldBeNil)
+			Convey("when no k defined", func() {
+				termination := TerminationImprovement{}
+				pop := gene.Population{Stats: gene.PopulationStats{TotalFitness: 42}}
+				So(termination.End(pop), ShouldBeNil)
 
-			pop.Stats.TotalFitness = 43
-			So(termination.End(pop), ShouldBeNil)
+				pop.Stats.TotalFitness = 43
+				So(termination.End(pop), ShouldBeNil)
 
-			// TotalFitness is still 43 => no more improvment
-			So(termination.End(pop), ShouldEqual, &termination)
+				// TotalFitness is still 43 => no more improvment
+				So(termination.End(pop), ShouldEqual, &termination)
+			})
+
+			Convey("when k defined", func() {
+				termination := TerminationImprovement{
+					K: 3,
+				}
+				pop := gene.Population{Stats: gene.PopulationStats{TotalFitness: 42}}
+				So(termination.End(pop), ShouldBeNil)               // 0 -> 42
+				So(termination.End(pop), ShouldBeNil)               // k: 1
+				So(termination.End(pop), ShouldBeNil)               // k: 2
+				So(termination.End(pop), ShouldEqual, &termination) // k: 3
+			})
 		})
 
 		Convey("when above fitness termination", func() {
