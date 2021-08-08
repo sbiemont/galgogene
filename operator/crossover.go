@@ -36,7 +36,7 @@ func (UniformCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 	return uniformCrossOver(bits1, bits2, 0.5)
 }
 
-// DavisOrderCrossOver performs a Davis' ordered crossover (permutation)
+// DavisOrderCrossOver performs a Davis' order crossover (permutation)
 type DavisOrderCrossOver struct{}
 
 func (DavisOrderCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
@@ -44,7 +44,7 @@ func (DavisOrderCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 	return davisOrderCrossOver(bits1, bits2, pos[0], pos[1]), davisOrderCrossOver(bits2, bits1, pos[0], pos[1])
 }
 
-// UniformOrderCrossOver performs a uniform ordered crossover (permutation)
+// UniformOrderCrossOver performs a uniform order crossover (permutation)
 type UniformOrderCrossOver struct{}
 
 func (UniformOrderCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
