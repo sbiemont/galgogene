@@ -16,10 +16,25 @@ See [annex](#annex) for general information about the main algorithm.
 
 Before creating an engine, operators have to be defined:
 
+* [Initializer](#initializer-operator): initializes a new set of bits for a new  individual
 * [Selection](#selection-operator): selection method to fetch one individual from the population
-* [Mutation](#mutation-operator): mutation method applied on the chosen individuals
+* [CrossOver](#crossover-operator): crossover method applied on the chosen individuals
+* [Mutation](#mutation-operator): mutation method applied after crossover
 * [Survivor](#survivor-operator): mutated individuals are added of the new pool, only select some "survivors"
 * [Termination](#termination-operator): ending conditions
+
+### Initializer operator
+
+Initializes a set of bits for a new individual (during )
+
+initializer | description | parameters
+----------- | ----------- | ----------
+`RandomInitializer` | Builds a list of full random bits (**default initializer**) | `MaxValue`: the maximum value to be stored
+`PermuationInitializer` | Builds a list of shuffled permuations
+
+```go
+init := gene.PermuationInitializer{}
+```
 
 ### Selection operator
 
@@ -54,22 +69,24 @@ if err != nil{
 }
 ```
 
-### CrossOver operator
+### Crossover operator
 
 Once individuals have been chosen, apply a crossover on pairs of individuals to generate 2 new individuals.
 
 crossover | description | parameters
 -------- | ----------- | ----------
-`OnePointCrossOver` | cross-over with 1 randomly chosen point
-`TwoPointsCrossOver` | cross-over with 2 randomly chosen points
-`UniformCrossOver` | bit by bit cross-over from both parents with an equal probability of beeing chosen
+`OnePointCrossOver` | crossover with 1 randomly chosen point
+`TwoPointsCrossOver` | crossover with 2 randomly chosen points
+`UniformCrossOver` | bit by bit crossover from both parents with an equal probability of beeing chosen
+`DavisOrderCrossOver` | Davis' order crossover (PX0), permutation that keep the entire list of values
+`UniformOrderCrossOver` | Uniform order crossover (PX1), permutation that keep the entire list of values
 
 ```go
 // New simple crossover
 crossover := operator.OnePointCrossOver{}
 ```
 
-It is also possible to apply an **ordered** list of mutations using `MultiCrossOver`.
+It is also possible to apply an **ordered** list of crossovers using `MultiCrossOver`.
 
 ```go
 // New multi crossover
@@ -138,9 +155,9 @@ survivor := operator.MultiSurvivor{
 Define an ending operator that check if processing can be stopped.
 
 termination | description | parameters
------ | ----------- | ----------
+----------- | ----------- | ----------
 `TerminationGeneration` | should end processing when the *K*<sup>th</sup> generation is reached | `K`: max generation to be reached
-`TerminationImprovement` | should end processing when the total fitness has not increased since the previous generation
+`TerminationImprovement` | should end processing when the total fitness has not increased since the previous generation | `K`: the number of generations that the improvement has to remain steady (default: 1)
 `TerminationAboveFitness` | should end processing when the elite reaches the defined fitness | `Fitness`: min fitness
 `TerminationDuration` | should end processing when the total duration of each generation reaches a maximum | `Duration`: max duration
 
@@ -184,12 +201,13 @@ Define all multi operators with a custom user action.
 
 ```go
 eng := Engine{
+  Initializer: nil, // Use default random initializer
   Selection: operator.MultiSelection{
     operator.NewProbaSelection(0.5, operator.SelectionRoulette{}),            // 50% chance to use roulette selection
     operator.NewProbaSelection(1, operator.SelectionTournament{Fighters: 3}), // Otherwise, use tournament selection with 3 fighters
   },
   CrossOver: operator.MultiCrossOver{
-    operator.NewProbaCrossOver(1, operator.UniformCrossOver{}),   // 100% chance to apply uniform cross-over
+    operator.NewProbaCrossOver(1, operator.UniformCrossOver{}),   // 100% chance to apply uniform crossover
   },
   Mutation: operator.MultiMutation{
     operator.NewProbaMutation(0.1, operator.UniformMutation{}),  // 10% chance to also apply a crossover, each bit has 50% chance to be changed
@@ -241,15 +259,17 @@ last, termination, err := eng.Run(popSize, bitsSize, fitness)
 Here is the general algorithm explained using pseudo code:
 
 ```raw
-pop = init random population of n individuals
-loop until ending condition found {
+pop = init population of n individuals using initializer
+loop until terminating condition found {
   pop' = new empty population
   loop on arbitrary k {
     select individual1 from pop
     select individual2 from pop
 
-    mutate individual1 with individual2 to create individual1' and individual2'
-    add individual1' and individual2' to pop'
+    cross individual1 with individual2 to create individual1' and individual2'
+    mutate individual1' to create individual1''
+    mutate individual2' to create individual2''
+    add individual1'' and individual2'' to pop'
   }
   choose survivors from pop'
   pop = pop' (pop become is the new generation)

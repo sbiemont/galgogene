@@ -22,6 +22,11 @@ func NewBits(size int, maxValue uint8) Bits {
 	}
 }
 
+// NewBitsFrom creates a new empty set of bits from another set
+func NewBitsFrom(bits Bits) Bits {
+	return NewBits(bits.Len(), bits.MaxValue)
+}
+
 // NewBitsRandom returns a randomly initialized set of bits
 func NewBitsRandom(size int, maxValue uint8) Bits {
 	result := Bits{

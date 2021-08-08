@@ -44,6 +44,23 @@ func (DavisOrderCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 	return davisOrderCrossOver(bits1, bits2, pos[0], pos[1]), davisOrderCrossOver(bits2, bits1, pos[0], pos[1])
 }
 
+// UniformOrderCrossOver performs a uniform order crossover (permutation)
+type UniformOrderCrossOver struct{}
+
+func (UniformOrderCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
+	var mask0 []int
+	var mask1 []int
+	for i := 0; i < bits1.Len(); i++ {
+		if random.Peek(0.5) {
+			mask1 = append(mask1, i)
+		} else {
+			mask0 = append(mask0, i)
+		}
+	}
+
+	return uniformOrderCrossOver(bits1, bits2, mask0, mask1), uniformOrderCrossOver(bits2, bits1, mask0, mask1)
+}
+
 // ------------------------------
 
 // ProbaCrossOver is a probabilistic crossover
@@ -87,13 +104,11 @@ func (mco MultiCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 // result 2:  [1 1 0 0 1 1 0 0]
 func crossOver(bits1, bits2 gene.Bits, indexes []int) (gene.Bits, gene.Bits) {
 	var gA, gB *gene.Bits = &bits1, &bits2
-
-	sz := bits1.Len()
-	res1 := gene.NewBits(sz, bits1.MaxValue)
-	res2 := gene.NewBits(sz, bits1.MaxValue)
+	res1 := gene.NewBitsFrom(bits1)
+	res2 := gene.NewBitsFrom(bits1)
 
 	i1 := 0
-	for _, i2 := range append(indexes, sz) {
+	for _, i2 := range append(indexes, bits1.Len()) {
 		// Copy sub-slices
 		if i1 != i2 {
 			_ = copy(res1.Raw[i1:i2], (*gA).Raw[i1:i2])
@@ -119,11 +134,10 @@ func crossOver(bits1, bits2 gene.Bits, indexes []int) (gene.Bits, gene.Bits) {
 // result 1: [0 1 1 0 0 0 1 0]
 // result 2: [1 0 0 1 1 1 0 1]
 func uniformCrossOver(bits1, bits2 gene.Bits, rate float64) (gene.Bits, gene.Bits) {
-	sz := bits1.Len()
-	res1 := gene.NewBits(sz, bits1.MaxValue)
-	res2 := gene.NewBits(sz, bits1.MaxValue)
+	res1 := gene.NewBitsFrom(bits1)
+	res2 := gene.NewBitsFrom(bits1)
 
-	for i := 0; i < sz; i++ {
+	for i := 0; i < bits1.Len(); i++ {
 		if random.Peek(rate) {
 			// Copy without change
 			res1.Raw[i] = bits1.Raw[i]
@@ -138,41 +152,73 @@ func uniformCrossOver(bits1, bits2 gene.Bits, rate float64) (gene.Bits, gene.Bit
 	return res1, res2
 }
 
+type finder struct {
+	idx  int
+	uniq map[uint8]interface{}
+}
+
+func newFinder() finder {
+	return finder{
+		uniq: make(map[uint8]interface{}),
+	}
+}
+
+func (fnd *finder) nextUnused(bits gene.Bits) uint8 {
+	for fnd.idx < bits.Len() {
+		value := bits.Raw[fnd.idx]
+		_, ok := fnd.uniq[value]
+		fnd.idx++
+		if !ok {
+			fnd.used(value)
+			return value
+		}
+	}
+	return 0
+}
+
+func (fnd finder) used(value uint8) {
+	fnd.uniq[value] = nil
+}
+
 func davisOrderCrossOver(bits1, bits2 gene.Bits, pos1, pos2 int) gene.Bits {
 	// Find unused value
-	sz := bits1.Len()
-	uniq := make(map[uint8]interface{})
-	var idx int
-	unusedValue := func() uint8 {
-		for idx < sz {
-			value := bits2.Raw[idx]
-			_, ok := uniq[value]
-			idx++
-			if !ok {
-				uniq[value] = nil
-				return value
-			}
-		}
-		return 0
-	}
-
-	res := gene.NewBits(sz, bits1.MaxValue)
+	fnd := newFinder()
+	res := gene.NewBitsFrom(bits1)
 
 	// Copy range part
 	for i := pos1; i <= pos2; i++ {
 		value := bits1.Raw[i]
 		res.Raw[i] = value
-		uniq[value] = nil
+		fnd.used(value)
 	}
 
 	// Fill begining with unused values
 	for i := 0; i < pos1; i++ {
-		res.Raw[i] = unusedValue()
+		res.Raw[i] = fnd.nextUnused(bits2)
 	}
 
 	// Fill ending with unused values
-	for i := pos2 + 1; i < sz; i++ {
-		res.Raw[i] = unusedValue()
+	for i := pos2 + 1; i < bits1.Len(); i++ {
+		res.Raw[i] = fnd.nextUnused(bits2)
+	}
+
+	return res
+}
+
+func uniformOrderCrossOver(bits1, bits2 gene.Bits, mask0 []int, mask1 []int) gene.Bits {
+	res := gene.NewBitsFrom(bits1)
+	fnd := newFinder()
+
+	// mask1: copy values and add to uniq
+	for _, idx := range mask1 {
+		value := bits1.Raw[idx]
+		res.Raw[idx] = value
+		fnd.used(value)
+	}
+
+	// mask0: value has to be found in unused values
+	for _, idx := range mask0 {
+		res.Raw[idx] = fnd.nextUnused(bits2)
 	}
 
 	return res

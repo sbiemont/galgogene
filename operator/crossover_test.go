@@ -75,15 +75,20 @@ func TestCrossOvers(t *testing.T) {
 		bits1 := newBits([]uint8{1, 2, 3, 4, 5, 6, 7, 8, 9})
 		bits2 := newBits([]uint8{3, 4, 7, 2, 8, 9, 1, 6, 5})
 
-		// for i := 0; i < 100; i++ {
-		// 	rand.Seed(int64(i))
-		// 	DavisOrderCrossOver{}.Mate(bits1, bits2)
-		// }
-
 		rand.Seed(50)
 		res1, res2 := DavisOrderCrossOver{}.Mate(bits1, bits2)
 
 		So(res1, ShouldResemble, newBits([]uint8{3, 2, 8, 4, 5, 6, 7, 9, 1}))
 		So(res2, ShouldResemble, newBits([]uint8{3, 4, 5, 2, 8, 9, 1, 6, 7}))
+	})
+
+	Convey("uniform order crossover", t, func() {
+		bits1 := newBits([]uint8{1, 2, 3, 4, 5, 6, 7, 8, 9})
+		bits2 := newBits([]uint8{3, 4, 7, 2, 8, 9, 1, 6, 5})
+
+		mask0 := []int{2, 4, 5, 6, 8}
+		mask1 := []int{0, 1, 3, 7}
+		So(uniformOrderCrossOver(bits1, bits2, mask0, mask1).Raw, ShouldResemble, []uint8{1, 2, 3, 4, 7, 9, 6, 8, 5})
+		So(uniformOrderCrossOver(bits2, bits1, mask0, mask1).Raw, ShouldResemble, []uint8{3, 4, 1, 2, 5, 7, 8, 6, 9})
 	})
 }
