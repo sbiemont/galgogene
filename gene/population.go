@@ -8,8 +8,9 @@ import (
 
 // Individual represents the coded chain of bits with a given fitness
 type Individual struct {
-	Code    Bits
-	Fitness float64
+	Code    Bits    // Genetic data representation
+	Fitness float64 // Current fitness of the individual
+	Rank    int     // Generation number of the individual (starts at 0)
 }
 
 // NewIndividual initializes a new individual instance
@@ -104,10 +105,24 @@ func (pop *Population) ComputeTotalFitness() {
 	}
 }
 
-// Sort population by highest fitness first
-func (pop Population) Sort() {
+// AddRank move all individual to the upper rank
+func (pop *Population) AddRank() {
+	for i := range pop.Individuals {
+		pop.Individuals[i].Rank++
+	}
+}
+
+// SortByFitness sorts the population by highest fitness first
+func (pop Population) SortByFitness() {
 	sort.Slice(pop.Individuals, func(i, j int) bool {
 		return pop.Individuals[i].Fitness > pop.Individuals[j].Fitness
+	})
+}
+
+// SortByRank sorts the population by newest individual first
+func (pop Population) SortByRank() {
+	sort.Slice(pop.Individuals, func(i, j int) bool {
+		return pop.Individuals[i].Rank < pop.Individuals[j].Rank
 	})
 }
 
@@ -130,6 +145,11 @@ func (pop Population) Last(k int) Population {
 		Individuals: pop.Individuals[len(pop.Individuals)-k:],
 		fitness:     pop.fitness,
 	}
+}
+
+// Len returns the popultation number of individuals
+func (pop Population) Len() int {
+	return len(pop.Individuals)
 }
 
 // MapCount counts the number of different fitnesses

@@ -17,16 +17,16 @@ type Selection interface {
 
 // ------------------------------
 
-// SelectionRoulette defines a fitness proportionate selection
+// RouletteSelection defines a fitness proportionate selection
 // https://en.wikipedia.org/wiki/Fitness_proportionate_selection
-type SelectionRoulette struct{}
+type RouletteSelection struct{}
 
 // Select 1 individual using roulette method
 // Calculate S = the sum of all fitnesses
 // Generate a random number between 0 and S
 // Starting from the top of the population, keep adding the fitnesses to the partial sum P, till P<S
 // The individual for which P exceeds S is the chosen individual.
-func (SelectionRoulette) Select(pop gene.Population) (gene.Individual, error) {
+func (RouletteSelection) Select(pop gene.Population) (gene.Individual, error) {
 	randFitness := rand.Float64() * pop.Stats.TotalFitness
 
 	var currFitness float64
@@ -43,14 +43,14 @@ func (SelectionRoulette) Select(pop gene.Population) (gene.Individual, error) {
 
 // ------------------------------
 
-// SelectionTournament select the best individual between k individuals
-type SelectionTournament struct {
+// TournamentSelection select the best individual between k individuals
+type TournamentSelection struct {
 	Fighters int // Number of fighters
 }
 
 // Select 1 individual between k figthers
 // Choose k individuals from the population and retrieves the best one
-func (st SelectionTournament) Select(pop gene.Population) (gene.Individual, error) {
+func (st TournamentSelection) Select(pop gene.Population) (gene.Individual, error) {
 	if st.Fighters == 0 {
 		return gene.Individual{}, errors.New("selection tournament: fighters shall be > 0")
 	}
@@ -71,61 +71,58 @@ func (st SelectionTournament) Select(pop gene.Population) (gene.Individual, erro
 
 // ------------------------------
 
-type SelectionElite struct{}
+// EliteSelection only select the best individual from population
+type EliteSelection struct{}
 
-func (SelectionElite) Select(pop gene.Population) (gene.Individual, error) {
+func (EliteSelection) Select(pop gene.Population) (gene.Individual, error) {
 	return pop.Elite(), nil
 }
 
 // ------------------------------
 
-type ProbaSelection struct {
+// probaSelection is a probabilistic selection
+type probaSelection struct {
 	rate float64
 	sel  Selection
 }
 
-func NewProbaSelection(rate float64, sel Selection) ProbaSelection {
-	return ProbaSelection{
-		rate: rate,
-		sel:  sel,
-	}
-}
-
 // MultiSelection defines an ordered list of selections each one with a given probability in [0 ; 1]
 // The first chosen selection ends processing. If no selection matches, an error is raised
-type MultiSelection []ProbaSelection
+type MultiSelection struct {
+	selections []probaSelection
+	deflt      Selection
+}
 
-// NewMultiSelection checks for consistency probailities
-func NewMultiSelection(selections []ProbaSelection) (MultiSelection, error) {
-	n := len(selections)
-	if n == 0 {
-		return nil, errors.New("at least one selection is required")
-	}
-	var sum float64
+// Use the given proba selection
+func (ms MultiSelection) Use(rate float64, selection Selection) MultiSelection {
+	ms.selections = append(ms.selections, probaSelection{
+		rate: rate,
+		sel:  selection,
+	})
+	return ms
+}
 
-	// Check proba = 1 shall only be the last one
-	for i, selection := range selections {
-		sum += selection.rate
-		if (selection.rate >= 1.0 && i != n-1) || // proba 1 but not last
-			(selection.rate < 1.0 && i == n-1) { // proba not 1 but last
-			return nil, errors.New("selection with proba=1 shall only be the last one")
-		}
-	}
-
-	// OK
-	return selections, nil
+// Otherwise defines the survivor to be used if no selection have been picked
+func (ms MultiSelection) Otherwise(selection Selection) MultiSelection {
+	ms.deflt = selection
+	return ms
 }
 
 // Select an individual
 // First, randomly choose a selection
 // Then, use the chosen selection on the current population
 func (ms MultiSelection) Select(pop gene.Population) (gene.Individual, error) {
-	for _, probaSelection := range ms {
-		if random.Peek(probaSelection.rate) {
-			return probaSelection.sel.Select(pop)
+	if ms.deflt == nil {
+		return gene.Individual{}, errors.New("no default selector defined")
+	}
+
+	// Find for first selector to be used
+	for _, proba := range ms.selections {
+		if random.Peek(proba.rate) {
+			return proba.sel.Select(pop)
 		}
 	}
 
-	// Error, a selection with the max probability shall be defined to avoid this kind of error
-	return gene.Individual{}, errors.New("selection multi proba, cannot peek any individual")
+	// Use default selector
+	return ms.deflt.Select(pop)
 }

@@ -2,6 +2,7 @@ package example
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -11,9 +12,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// Example with multi criteria for
+// Example with multi criteria for string matcher
 func TestStringMatcher(t *testing.T) {
 	szr, _ := gene.NewSerializer(8)
+	rand.Seed(time.Now().Unix())
 
 	Convey("multi string matcher", t, func() {
 		targetStr := "This is my first genetic algorithm using multi string matcher!"
@@ -33,27 +35,22 @@ func TestStringMatcher(t *testing.T) {
 
 		eng := engine.Engine{
 			Initializer: gene.NewRandomInitializer(1),
-			Selection: operator.MultiSelection{
-				operator.NewProbaSelection(0.5, operator.SelectionTournament{Fighters: 2}), // 50% chance to use tournament
-				operator.NewProbaSelection(1, operator.SelectionRoulette{}),                // otherwise, use roulette
-			},
-			CrossOver: operator.MultiCrossOver{
-				operator.NewProbaCrossOver(0.1, operator.TwoPointsCrossOver{}), // 10% chance to apply 2 points crossover
-				operator.NewProbaCrossOver(1, operator.UniformCrossOver{}),     // 100% chance to apply uniform crossover
-			},
-			Mutation: operator.MultiMutation{
-				operator.NewProbaMutation(0.05, operator.UniformMutation{}), // 5% chance to mutate (with 50% chance of changing each bits)
-			},
-			Survivor: operator.MultiSurvivor{
-				operator.SurvivorAddAllParents{}, // Add first all parents to the new generation pool
-				operator.SurvivorElite{},         // Then, only keey k best individual in new generation
-			},
-			Termination: operator.MultiTermination{
-				&operator.TerminationGeneration{K: 100},              // End at generation #100
-				&operator.TerminationImprovement{},                   // End when total fitness cannot be improved
-				&operator.TerminationAboveFitness{Fitness: 1},        // End with perfect fitness
-				&operator.TerminationDuration{Duration: time.Second}, // End after 1s
-			},
+			Selection: operator.MultiSelection{}.
+				Use(0.5, operator.TournamentSelection{Fighters: 2}). // 50% chance to use tournament
+				Otherwise(operator.RouletteSelection{}),             // otherwise, use roulette
+			CrossOver: operator.MultiCrossOver{}.
+				Use(0.1, operator.TwoPointsCrossOver{}). // 10% chance to apply 2 points crossover
+				Use(1, operator.UniformCrossOver{}),     // 100% chance to apply uniform crossover
+			Mutation: operator.MultiMutation{}.
+				Use(0.05, operator.UniformMutation{}), // 5% chance to mutate (with 50% chance of changing each bits)
+			Survivor: operator.MultiSurvivor{}.
+				Use(0.9, operator.SurvivorElite{}).
+				Otherwise(operator.SurvivorChildren{}),
+			Termination: operator.MultiTermination{}.
+				Use(&operator.GenerationTermination{K: 100}).              // End at generation #100
+				Use(&operator.ImprovementTermination{}).                   // End when total fitness cannot be improved
+				Use(&operator.FitnessTermination{Fitness: 1}).             // End with perfect fitness
+				Use(&operator.DurationTermination{Duration: time.Second}), // End after 1s
 			OnNewGeneration: func(pop gene.Population) {
 				elite := pop.Elite()
 				bytes, _ := szr.ToBytes(elite.Code)

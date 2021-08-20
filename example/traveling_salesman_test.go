@@ -81,36 +81,30 @@ func (cts cities) Fitness() float64 {
 func TestTravelingSalesmanProblem(t *testing.T) {
 	Convey("cities", t, func() {
 		seed := time.Now().Unix()
-		// var seed int64 = 1626634789 // 98.35
+		// var seed int64 = 1626634789
 		rand.Seed(seed)
 
 		popSize := 300
 		eng := engine.Engine{
 			Initializer: gene.PermuationInitializer{},
-			Selection: operator.MultiSelection{
-				operator.NewProbaSelection(0.3, operator.SelectionTournament{Fighters: 2}),
-				operator.NewProbaSelection(1, operator.SelectionRoulette{}),
-			},
-			CrossOver: operator.MultiCrossOver{
-				operator.NewProbaCrossOver(0.2, operator.UniformOrderCrossOver{}),
-				operator.NewProbaCrossOver(1, operator.DavisOrderCrossOver{}),
-			},
-			Mutation: operator.MultiMutation{
-				operator.NewProbaMutation(0.15, operator.TwoSwapMutation{}),
-			},
-			Survivor: operator.MultiSurvivor{
-				operator.SurvivorElite{},
-			},
-			Termination: operator.MultiTermination{
-				&operator.TerminationGeneration{K: 1000},
-				&operator.TerminationImprovement{K: 10},
-				&operator.TerminationDuration{Duration: 10 * time.Second},
-			},
+			Selection: operator.MultiSelection{}.
+				Use(0.3, operator.TournamentSelection{Fighters: 2}).
+				Otherwise(operator.RouletteSelection{}),
+			CrossOver: operator.MultiCrossOver{}.
+				Use(0.2, operator.UniformOrderCrossOver{}).
+				Use(1, operator.DavisOrderCrossOver{}),
+			Mutation: operator.MultiMutation{}.
+				Use(0.15, operator.InversionPermutation{}),
+			Survivor: operator.MultiSurvivor{}.
+				Use(0.9, operator.SurvivorElite{}).
+				Otherwise(operator.SurvivorChildren{}),
+			Termination: operator.MultiTermination{}.
+				Use(&operator.GenerationTermination{K: 1000}).
+				Use(&operator.ImprovementTermination{K: 10}).
+				Use(&operator.DurationTermination{Duration: 10 * time.Second}),
 			OnNewGeneration: func(pop gene.Population) {
 				elite := toCities(pop.Elite().Code)
 				fmt.Printf(
-					// "Generation #%d, dur: %s fit: %f, tot: %f, str:\n%s\n",
-					// pop.Stats.GenerationNb, pop.Stats.TotalDuration, elite.Fitness, pop.Stats.TotalFitness, sdk.String(),
 					"Generation #%d, dur: %s dist: %f, tot: %f, cnt: %d/%d\n",
 					pop.Stats.GenerationNb, pop.Stats.TotalDuration, elite.Distance(), pop.Stats.TotalFitness,
 					pop.MapCount(), popSize,

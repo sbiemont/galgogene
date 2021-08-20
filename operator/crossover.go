@@ -63,23 +63,23 @@ func (UniformOrderCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits)
 
 // ------------------------------
 
-// ProbaCrossOver is a probabilistic crossover
-type ProbaCrossOver struct {
+// probaCrossOver is a probabilistic crossover
+type probaCrossOver struct {
 	rate float64   // Crossover rate
 	co   CrossOver // Crossover operator
 }
 
-// NewProbaCrossOver build a new full instance of ProbaCrossOver
-func NewProbaCrossOver(rate float64, co CrossOver) ProbaCrossOver {
-	return ProbaCrossOver{
-		rate: rate,
-		co:   co,
-	}
-}
-
 // MultiCrossOver defines a serie of crossovers with a specific probability of beeing chosen.
 // All or no crossovers may be applied
-type MultiCrossOver []ProbaCrossOver
+type MultiCrossOver []probaCrossOver
+
+// Use the given proba crossover
+func (mco MultiCrossOver) Use(rate float64, co CrossOver) MultiCrossOver {
+	return append(mco, probaCrossOver{
+		rate: rate,
+		co:   co,
+	})
+}
 
 func (mco MultiCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 	res1, res2 := bits1, bits2

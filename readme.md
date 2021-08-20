@@ -2,15 +2,15 @@
 
 Galgogene is a simple implementation of a [genetic algorithm](https://en.wikipedia.org/wiki/Genetic_algorithm).
 
-## Roadmap
-
-* [ ] simplify survivors methods
-
 ## Getting started
 
 For more example, see [/galgogene/example](https://github.com/sbiemont/galgogene/tree/master/example)
 
 See [annex](#annex) for general information about the main algorithm.
+
+## Roadmap
+
+* [ ] Force `Otherwise` method to be called for `Selection` and `Survivors`
 
 ## The operators
 
@@ -30,7 +30,7 @@ Initializes a set of bits for a new individual (during initialization step)
 initializer | description | parameters
 ----------- | ----------- | ----------
 `RandomInitializer` | Builds a list of full random bits (**default initializer**) | `MaxValue`: the maximum value to be stored
-`PermuationInitializer` | Builds a list of shuffled permuations
+`PermuationInitializer` | Builds a list of shuffled indexes in [0 ; bits length[
 
 ```go
 // New random initializer with max value = 1
@@ -39,48 +39,47 @@ init := gene.NewRandomInitializer(1),
 
 ### Selection operator
 
-This operator is used to select individuals from the population, each time the selection process is triggered.
+This operator is used to select an individual from the population, each time the selection process is triggered.
 
 selection | description | parameters
 -------- | ----------- | ----------
-`SelectionRoulette` | Fitness proportionate selection
-`SelectionTournament` | Select *K* fighters and keep the best one | `Fighters`: number of fighters in a tournament
+`RouletteSelection`   | Fitness proportionate selection
+`TournamentSelection` | Select *K* fighters and keep the best one | `Fighters`: number of fighters in a tournament
 
 ```go
 // New simple selection
-selection := operator.SelectionRoulette{}
+selection := operator.RouletteSelection{}
 ```
 
 It is also possible to have an **ordered** list of selections using `MultiSelection`.
 Each selection has a probability to be used: if the first selection is not chosen, try the second one and so on.
-If no selection has been chosen, an error will be raised by the `Engine`.
-Use the `NewMultiSelection()` for consistency to avoid any further error.
+If no selection has been chosen, the default one is used (an error will be raised by the `Engine` if no default selection is defined).
 
 For example, create a `Multiselection`:
 
 ```go
 // New multi selection
-selection, err := operator.NewMultiSelection([]operator.ProbaSelection{
-  operator.NewProbaSelection(0.5, operator.SelectionRoulette{}),            // 50% chance to use wheel roulette selection
-  operator.NewProbaSelection(1, operator.SelectionTournament{Fighters: 3}), // Otherwise, use tournament selection
-})
-
-if err != nil{
-  // Check for error
-}
+selection := operator.MultiSelection{}.
+  Use(0.5, operator.RouletteSelection{}).              // 50% chance to use wheel roulette selection
+  Otherwise(operator.TournamentSelection{Fighters: 3}) // Otherwise, use tournament selection
 ```
 
 ### Crossover operator
 
 Once individuals have been chosen, apply a crossover on pairs of individuals to generate 2 new individuals.
 
+Notes:
+
+* standard crossovers will mix values from both parents to create 2 new children
+* permutation crossovers will reorder values without changing them
+
 crossover | description | parameters
 -------- | ----------- | ----------
-`OnePointCrossOver` | crossover with 1 randomly chosen point
-`TwoPointsCrossOver` | crossover with 2 randomly chosen points
-`UniformCrossOver` | bit by bit crossover from both parents with an equal probability of beeing chosen
-`DavisOrderCrossOver` | Davis' order crossover (PX0), permutation that keep the entire list of values
-`UniformOrderCrossOver` | Uniform order crossover (PX1), permutation that keep the entire list of values
+`OnePointCrossOver`  | Crossover with 1 randomly chosen point
+`TwoPointsCrossOver` | Crossover with 2 randomly chosen points
+`UniformCrossOver`   | Bit by bit crossover (with an equal probability of beeing chosen)
+`DavisOrderCrossOver` | Davis' order crossover (PX0), **permutation** that reorder the list of values
+`UniformOrderCrossOver` | Uniform order crossover (PX1), **permutation** that reorder the list of values
 
 ```go
 // New simple crossover
@@ -88,26 +87,35 @@ crossover := operator.OnePointCrossOver{}
 ```
 
 It is also possible to apply an **ordered** list of crossovers using `MultiCrossOver`.
+Note that all (or none) crossover may be applied depending on the probability rates defined.
 
 ```go
 // New multi crossover
-crossover := operator.MultiCrossOver{
-  NewProbaCrossOver(0.05, operator.UniformCrossOver{}), // 5% chance for the uniform crossover to happen
-  NewProbaCrossOver(1, operator.OnePointCrossOver{}),   // 100% chance for the one-point crossover to happen
-}
+crossover := operator.MultiCrossOver{}.
+  Use(0.05, operator.UniformCrossOver{}). // 5% chance for the uniform crossover to happen
+  Use(0.75, operator.OnePointCrossOver{}) // 75% chance for the one-point crossover to happen
 ```
 
 ### Mutation operator
 
 Once crossover(s) have been applied, apply a mutation like a simple random bits change.
 
+Notes:
+
+* a **mutation** overrides some bits with new random values
+* a **permutation** randomly reorders some bits (without changing the values)
+
 mutation | description | parameters
 -------- | ----------- | ----------
-`UniformMutation` | random mutation of bits (each bit has 50% chance to be changed)
+`UniqueMutation`  | Randomly choose one unique bit and change its value
+`UniformMutation` | Random mutation of bits (each bit has 50% chance to be changed)
+`SwapPermutation`      | Random swap of 2 bits
+`InversionPermutation` | Randomly picks 2 points and inverts the subtour (eg.: `AB.CDEF.GH` will become `AB.FEDC.GH`)
+`SramblePermutation`   | Randomly picks 2 points and shuffles the subtour (eg.: `AB.CDEF.GH` will become `AB.ECFD.GH`)
 
 ```go
 // New simple mutation
-mutation := operator.OnePointCrossOver{}
+mutation := operator.UniformMutation{}
 ```
 
 It is also possible to apply an **ordered** list of mutations using `MultiMutation`.
@@ -120,9 +128,9 @@ All mutations are triggered one by one, so, if probabilities are too small, it m
 
 ```go
 // New multi mutation
-mutation := operator.MultiMutation{
-  NewProbaMutation(0.05, operator.UniformMutation{}),  // 5% chance for the mutation to happen
-}
+mutation := operator.MultiMutation{}.
+  Use(0.01, operator.UniformMutation{}). // 1% chance for the mutation to happen
+  Use(0.05, operator.UniqueMutation{})   // 5% chance for the mutation to happen
 ```
 
 ### Survivor operator
@@ -132,23 +140,23 @@ It is now time to select individuals from this new generation.
 
 survivor | description | parameters
 -------- | ----------- | ----------
-`SurvivorAddAllParents` | add all parents individuals to the surviving population
-`SurvivorAddParentsElite` | adds the *K* parents elite to the surviving population | `K`: number of individuals
-`SurvivorElite` | only selects the *K* elite from the surviving population (if *K* is 0, the same population size is kept) | `K`: number of individuals
+`SurvivorElite` | Select the elite from the surviving population
+`SurvivorRank`  | Select the individual with the smallest ranks
+`SurvivorChildren` | Keep the children in the new generation (limited to the parent pool size)
 
 ```go
 // New simple surviving operator
 survivor := operator.SurvivorElite{}
 ```
 
-It is also possible to apply an **ordered** list of surviving actions
+It is also possible to apply an **ordered** list of surviving actions, closing with `Otherwise`.
 
 ```go
 // New multi surviving operator
-survivor := operator.MultiSurvivor{
-  SurvivorAddParentsElite{K: 2},  // First, add 2 parent elite to the new generation (elitism is not so good for individuals diversity)
-  SurvivorElite{},                // Then, only keep the best individuals in the new generation
-}
+survivor := operator.MultiSurvivor{}.
+  Use(0.75, SurvivorElite{}).    // Only keep the best individuals in the new generation
+  Use(0.25, SurvivorRank{}).     // Or, only keep the least ranked individuals in the new generation
+  Otherwise(SurvivorChildren{}   // Otherwise, only keep new generated children
 ```
 
 ### Termination operator
@@ -157,25 +165,24 @@ Define an ending operator that check if processing can be stopped.
 
 termination | description | parameters
 ----------- | ----------- | ----------
-`TerminationGeneration` | should end processing when the *K*<sup>th</sup> generation is reached | `K`: max generation to be reached
-`TerminationImprovement` | should end processing when the total fitness has not increased since the previous generation | `K`: the number of generations that the improvement has to remain steady (default: 1)
-`TerminationAboveFitness` | should end processing when the elite reaches the defined fitness | `Fitness`: min fitness
-`TerminationDuration` | should end processing when the total duration of each generation reaches a maximum | `Duration`: max duration
+`GenerationTermination` | Processing will end when the *K*<sup>th</sup> generation is reached | `K`: max generation to be reached
+`ImprovementTermination` | Processing will end when the total fitness has not increased since the previous generation | `K`: the number of generations that the improvement has to remain steady (default: 1)
+`FitnessTermination`  | Processing will end when the elite reaches the defined fitness | `Fitness`: min fitness
+`DurationTermination` | Processing will end when the total duration of each generation reaches a maximum | `Duration`: max duration
 
 ```go
 // New simple termination operator
-termination := operator.TerminationGeneration{K: 50}
+termination := operator.GenerationTermination{K: 50}
 ```
 
 It is also possible to check a list of possible ending conditions, using a `MultiTermination`.
 
 ```go
 // New multi termination operator
-termination := operator.MultiTermination{
-  operator.TerminationGeneration{K: 50},                    // Check if generation #50 is reached
-  operator.TerminationAboveFitness{Fitness: 1},             // Check if Fitness=1 is reached
-  operator.TerminationDuration{Duration: 10 * time.Second}, // Check that the sum of computation time of each generation is limited to 10s
-}
+termination := operator.MultiTermination{}.
+  Use(operator.GenerationTermination{K: 50}).                   // Check if generation #50 is reached
+  Use(operator.FitnessTermination{Fitness: 1}).                 // Check if Fitness=1 is reached
+  Use(operator.DurationTermination{Duration: 10 * time.Second}) // Check that the sum of computation time of each generation is limited to 10s
 ```
 
 ## The engine
@@ -189,10 +196,10 @@ Define minimalistic operators for an engine, without the custom action.
 
 ```go
 eng := engine.Engine{
-  Selection: operator.SelectionRoulette{},              // Simple selection
-  Mutation:  operator.UniformCrossOver{},               // Simple mutation
-  Survivor:  operator.SurvivorElite{},                  // Simple survivor (with default parameter)
-  Termination:    &operator.TerminationAboveFitness{Fitness: 1.0},  // Simple termination condition
+  Selection:   operator.RouletteSelection{},               // Simple selection
+  Mutation:    operator.UniformCrossOver{},                // Simple mutation
+  Survivor:    operator.SurvivorElite{},                   // Simple survivor (with default parameter)
+  Termination: &operator.FitnessTermination{Fitness: 1.0}, // Simple termination condition
 }
 ```
 
@@ -203,26 +210,21 @@ Define all multi operators with a custom user action.
 ```go
 eng := Engine{
   Initializer: nil, // Use default random initializer
-  Selection: operator.MultiSelection{
-    operator.NewProbaSelection(0.5, operator.SelectionRoulette{}),            // 50% chance to use roulette selection
-    operator.NewProbaSelection(1, operator.SelectionTournament{Fighters: 3}), // Otherwise, use tournament selection with 3 fighters
-  },
-  CrossOver: operator.MultiCrossOver{
-    operator.NewProbaCrossOver(1, operator.UniformCrossOver{}),   // 100% chance to apply uniform crossover
-  },
-  Mutation: operator.MultiMutation{
-    operator.NewProbaMutation(0.1, operator.UniformMutation{}),  // 10% chance to also apply a crossover, each bit has 50% chance to be changed
-  }
-  Survivor: operator.MultiSurvivor{
-    operator.SurvivorAddParentsElite{K: 2}, // Add 2 elite parent's individuals to the new generation
-    operator.SurvivorElite{},               // Then, only keep best individuals to create the new population
-  },
-  Termination: operator.MultiTermination{
-    &operator.TerminationGeneration{K: 50},               // Stop at generation #50
-    &operator.TerminationImprovement{},                   // Or stop if total fitness has not been improved
-    &operator.TerminationAboveFitness{Fitness: 1},        // Or stop if Fitness=1 is reached
-    &operator.TerminationDuration{Duration: time.Second}, // Or stop if total computation time of generations has reached 1s
-  },
+  Selection: operator.MultiSelection{}.
+    Use(0.5, operator.RouletteSelection{}),               // 50% chance to use roulette selection
+    Otherwise(operator.TournamentSelection{Fighters: 3}), // Otherwise, use tournament selection with 3 fighters
+  CrossOver: operator.MultiCrossOver{}.
+    Use(1, operator.UniformCrossOver{})   // 100% chance to apply uniform crossover
+  Mutation: operator.MultiMutation{}.
+    Use(0.1, operator.UniformMutation{}), // 10% chance to apply a mution, each bit has 50% chance to be changed
+  Survivor: operator.MultiSurvivor{}.
+    Use(0.1, operator.SurvivorRank{}).    // 10% to use the ranking selection
+    Otherwise(operator.SurvivorElite{}),  // Otherwise, only keep best individuals to create the new population
+  Termination: operator.MultiTermination{}.
+    Use(&operator.GenerationTermination{K: 50}).               // Stop at generation #50
+    Use(&operator.ImprovementTermination{}).                   // Or stop if total fitness has not been improved
+    Use(&operator.FitnessTermination{Fitness: 1}).             // Or stop if Fitness=1 is reached
+    Use(&operator.DurationTermination{Duration: time.Second}), // Or stop if total computation time of generations has reached 1s
   OnNewGeneration: func(pop gene.Population) { // OnNewGeneration is called each time a new generation is produced
     elite := pop.Elite()
     fmt.Printf(
@@ -250,9 +252,9 @@ var fitness gene.FitnessFct = func(bits gene.Bits) float64 {
 }
 
 last, termination, err := eng.Run(popSize, bitsSize, fitness)
-// err:   not nil if an error occurred
+// err: not nil if an error occurred
 // termination: the termination condition used to stop processing (can be ignored)
-// last:  the last generation
+// last: the last generation
 ```
 
 ## Annex
@@ -283,7 +285,7 @@ The full process:
 ```mermaid
 graph LR
   init(Init)
-  survive(Survials)
+  survive(Surviors)
   select(Selection)
   crossover(CrossOver)
   mutate(Mutation)
