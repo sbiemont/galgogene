@@ -12,13 +12,13 @@ func TestTerminations(t *testing.T) {
 	Convey("terminations", t, func() {
 		Convey("when generation Termination", func() {
 			Convey("when ko", func() {
-				termination := TerminationGeneration{K: 10}
+				termination := GenerationTermination{K: 10}
 				pop := gene.Population{Stats: gene.PopulationStats{GenerationNb: 9}}
 				So(termination.End(pop), ShouldBeNil)
 			})
 
 			Convey("when ok", func() {
-				termination := TerminationGeneration{K: 10}
+				termination := GenerationTermination{K: 10}
 				pop := gene.Population{Stats: gene.PopulationStats{GenerationNb: 10}}
 				So(termination.End(pop), ShouldEqual, &termination)
 			})
@@ -26,7 +26,7 @@ func TestTerminations(t *testing.T) {
 
 		Convey("when improvement termination", func() {
 			Convey("when no k defined", func() {
-				termination := TerminationImprovement{}
+				termination := ImprovementTermination{}
 				pop := gene.Population{Stats: gene.PopulationStats{TotalFitness: 42}}
 				So(termination.End(pop), ShouldBeNil)
 
@@ -38,7 +38,7 @@ func TestTerminations(t *testing.T) {
 			})
 
 			Convey("when k defined", func() {
-				termination := TerminationImprovement{
+				termination := ImprovementTermination{
 					K: 3,
 				}
 				pop := gene.Population{Stats: gene.PopulationStats{TotalFitness: 42}}
@@ -59,33 +59,33 @@ func TestTerminations(t *testing.T) {
 			}
 
 			Convey("when ko", func() {
-				termination := TerminationAboveFitness{Fitness: 0.8}
+				termination := FitnessTermination{Fitness: 0.8}
 				So(termination.End(pop), ShouldBeNil)
 			})
 
 			Convey("when ok", func() {
-				termination := TerminationAboveFitness{Fitness: 0.7}
+				termination := FitnessTermination{Fitness: 0.7}
 				So(termination.End(pop), ShouldEqual, &termination)
 			})
 		})
 
 		Convey("when duration termination", func() {
 			Convey("when ko", func() {
-				termination := TerminationDuration{Duration: time.Minute}
+				termination := DurationTermination{Duration: time.Minute}
 				pop := gene.Population{Stats: gene.PopulationStats{TotalDuration: time.Second}}
 				So(termination.End(pop), ShouldBeNil)
 			})
 
 			Convey("when ok", func() {
-				termination := TerminationDuration{Duration: time.Minute}
+				termination := DurationTermination{Duration: time.Minute}
 				pop := gene.Population{Stats: gene.PopulationStats{TotalDuration: time.Minute}}
 				So(termination.End(pop), ShouldEqual, &termination)
 			})
 		})
 
 		Convey("when multi termination", func() {
-			termination1 := TerminationGeneration{K: 10}
-			termination2 := TerminationDuration{Duration: time.Minute}
+			termination1 := GenerationTermination{K: 10}
+			termination2 := DurationTermination{Duration: time.Minute}
 			termination := MultiTermination{&termination1, &termination2}
 
 			Convey("when ko", func() {

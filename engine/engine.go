@@ -99,9 +99,15 @@ func (eng Engine) nextGeneration(parents gene.Population) (gene.Population, erro
 	// Compute all fitnesses
 	newPop.ComputeFitness()
 
-	// Survivors + total fitness and additional data
-	eng.Survivor.Survive(parents, &newPop)
+	// Survivors
+	err := eng.Survivor.Survive(parents, &newPop)
+	if err != nil {
+		return gene.Population{}, err
+	}
+
+	// Total fitness and additional data
 	newPop.ComputeTotalFitness()
+	newPop.AddRank()
 	newPop.Stats.GenerationNb = parents.Stats.GenerationNb + 1
 	newPop.Stats.TotalDuration = parents.Stats.TotalDuration + time.Since(start)
 	return newPop, nil

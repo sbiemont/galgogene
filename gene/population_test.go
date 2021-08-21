@@ -75,23 +75,62 @@ func TestPopulation(t *testing.T) {
 			So(pop.Stats.TotalFitness, ShouldEqual, 8+0+1+2)
 		})
 
-		Convey("when sort", func() {
+		Convey("when sort by fitness", func() {
 			pop := Population{
 				Individuals: []Individual{ind1, ind2, ind3, ind4},
 				fitness:     fitness,
 			}
 
-			pop.Sort()
+			pop.SortByFitness()
 			So(pop.Individuals, ShouldResemble, []Individual{ind1, ind2, ind3, ind4}) // unchanged
 
 			pop.ComputeFitness()
-			pop.Sort()
+			pop.SortByFitness()
 			So(pop.Individuals, ShouldResemble, []Individual{
 				{Code: ind1.Code, Fitness: 8},
 				{Code: ind4.Code, Fitness: 2},
 				{Code: ind3.Code, Fitness: 1},
 				{Code: ind2.Code, Fitness: 0},
 			})
+		})
+
+		Convey("when sort by rank", func() {
+			pop := Population{
+				Individuals: []Individual{
+					{Rank: 4},
+					{Rank: 3},
+					{Rank: 2},
+					{Rank: 1},
+				},
+			}
+
+			pop.SortByRank()
+			So(pop.Individuals, ShouldResemble, []Individual{
+				{Rank: 1},
+				{Rank: 2},
+				{Rank: 3},
+				{Rank: 4},
+			})
+		})
+
+		Convey("when move rank", func() {
+			pop := Population{
+				Individuals: []Individual{
+					{Rank: 4},
+					{Rank: 3},
+					{Rank: 2},
+					{Rank: 1},
+				},
+			}
+
+			pop.AddRank()
+			So(pop.Individuals, ShouldResemble, []Individual{
+				{Rank: 5},
+				{Rank: 4},
+				{Rank: 3},
+				{Rank: 2},
+			})
+
 		})
 	})
 }

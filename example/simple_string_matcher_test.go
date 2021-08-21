@@ -15,7 +15,7 @@ func TestSimpleStringMatcher(t *testing.T) {
 	szr, _ := gene.NewSerializer(8)
 
 	Convey("simple string matcher bit by bit", t, func() {
-		rand.Seed(180)
+		rand.Seed(2)
 		targetStr := "This is my first genetic algorithm using simple string matcher!"
 		targetBits := szr.ToBits([]byte(targetStr))
 		bitsSize := targetBits.Len()
@@ -32,10 +32,10 @@ func TestSimpleStringMatcher(t *testing.T) {
 		}
 
 		// Engine will stop when max fitness is reached
-		perfectFitness := &operator.TerminationAboveFitness{Fitness: 1.0}
+		perfectFitness := &operator.FitnessTermination{Fitness: 1}
 		eng := engine.Engine{
 			Initializer: gene.NewRandomInitializer(1),
-			Selection:   operator.SelectionRoulette{},
+			Selection:   operator.RouletteSelection{},
 			CrossOver:   operator.UniformCrossOver{},
 			Survivor:    operator.SurvivorElite{},
 			Termination: perfectFitness,
