@@ -15,10 +15,10 @@ type Survivor interface {
 
 // ------------------------------
 
-// SurvivorElite selects the elite from the parents + children population
-type SurvivorElite struct{}
+// EliteSurvivor selects the elite from the parents + children population
+type EliteSurvivor struct{}
 
-func (svr SurvivorElite) Survive(parents gene.Population, survivors *gene.Population) error {
+func (svr EliteSurvivor) Survive(parents gene.Population, survivors *gene.Population) error {
 	survivors.Individuals = append(survivors.Individuals, parents.Individuals...)
 	survivors.SortByFitness()
 	survivors.Individuals = (*survivors).First(parents.Len()).Individuals
@@ -27,10 +27,10 @@ func (svr SurvivorElite) Survive(parents gene.Population, survivors *gene.Popula
 
 // ------------------------------
 
-// SurvivorRank selects the newer individuals from the parents + children population
-type SurvivorRank struct{}
+// RankSurvivor selects the newer individuals from the parents + children population
+type RankSurvivor struct{}
 
-func (svr SurvivorRank) Survive(parents gene.Population, survivors *gene.Population) error {
+func (svr RankSurvivor) Survive(parents gene.Population, survivors *gene.Population) error {
 	survivors.Individuals = append(survivors.Individuals, parents.Individuals...)
 	survivors.SortByRank()
 	survivors.Individuals = (*survivors).First(parents.Len()).Individuals
@@ -39,10 +39,10 @@ func (svr SurvivorRank) Survive(parents gene.Population, survivors *gene.Populat
 
 // ------------------------------
 
-// SurvivorChildren only let the children population survive
-type SurvivorChildren struct{}
+// ChildrenSurvivor only let the children population survive
+type ChildrenSurvivor struct{}
 
-func (svr SurvivorChildren) Survive(parents gene.Population, survivors *gene.Population) error {
+func (svr ChildrenSurvivor) Survive(parents gene.Population, survivors *gene.Population) error {
 	survivors.Individuals = (*survivors).First(parents.Len()).Individuals
 	return nil
 }

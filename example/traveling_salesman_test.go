@@ -96,8 +96,8 @@ func TestTravelingSalesmanProblem(t *testing.T) {
 			Mutation: operator.MultiMutation{}.
 				Use(0.15, operator.InversionPermutation{}),
 			Survivor: operator.MultiSurvivor{}.
-				Use(0.9, operator.SurvivorElite{}).
-				Otherwise(operator.SurvivorChildren{}),
+				Use(0.9, operator.EliteSurvivor{}).
+				Otherwise(operator.ChildrenSurvivor{}),
 			Termination: operator.MultiTermination{}.
 				Use(&operator.GenerationTermination{K: 1000}).
 				Use(&operator.ImprovementTermination{K: 10}).
