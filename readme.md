@@ -29,12 +29,12 @@ Initializes a set of bits for a new individual (during initialization step)
 
 initializer | description | parameters
 ----------- | ----------- | ----------
-`RandomInitializer` | Builds a list of full random bits (**default initializer**) | `MaxValue`: the maximum value to be stored
+`RandomInitializer` | Builds a list of full random bits | `MaxValue`: the maximum value to be stored
 `PermuationInitializer` | Builds a list of shuffled indexes in [0 ; bits length[
 
 ```go
 // New random initializer with max value = 1
-init := gene.NewRandomInitializer(1),
+init := gene.NewRandomInitializer(1)
 ```
 
 ### Selection operator
@@ -140,13 +140,13 @@ It is now time to select individuals from this new generation.
 
 survivor | description | parameters
 -------- | ----------- | ----------
-`SurvivorElite` | Select the elite from the surviving population
-`SurvivorRank`  | Select the individual with the smallest ranks
-`SurvivorChildren` | Keep the children in the new generation (limited to the parent pool size)
+`EliteSurvivor` | Select the elite from the surviving population
+`RankSurvivor`  | Select the individual with the smallest ranks
+`ChildrenSurvivor` | Keep the children in the new generation (limited to the parent pool size)
 
 ```go
 // New simple surviving operator
-survivor := operator.SurvivorElite{}
+survivor := operator.EliteSurvivor{}
 ```
 
 It is also possible to apply an **ordered** list of surviving actions, closing with `Otherwise`.
@@ -154,9 +154,9 @@ It is also possible to apply an **ordered** list of surviving actions, closing w
 ```go
 // New multi surviving operator
 survivor := operator.MultiSurvivor{}.
-  Use(0.75, SurvivorElite{}).    // Only keep the best individuals in the new generation
-  Use(0.25, SurvivorRank{}).     // Or, only keep the least ranked individuals in the new generation
-  Otherwise(SurvivorChildren{}   // Otherwise, only keep new generated children
+  Use(0.75, EliteSurvivor{}).    // Only keep the best individuals in the new generation
+  Use(0.25, RankSurvivor{}).     // Or, only keep the least ranked individuals in the new generation
+  Otherwise(ChildrenSurvivor{})  // Otherwise, only keep new generated children
 ```
 
 ### Termination operator
@@ -197,8 +197,8 @@ Define minimalistic operators for an engine, without the custom action.
 ```go
 eng := engine.Engine{
   Selection:   operator.RouletteSelection{},               // Simple selection
-  Mutation:    operator.UniformCrossOver{},                // Simple mutation
-  Survivor:    operator.SurvivorElite{},                   // Simple survivor (with default parameter)
+  CrossOver:   operator.UniformCrossOver{},                // Simple crossover
+  Survivor:    operator.EliteSurvivor{},                   // Simple survivor
   Termination: &operator.FitnessTermination{Fitness: 1.0}, // Simple termination condition
 }
 ```
@@ -208,18 +208,18 @@ eng := engine.Engine{
 Define all multi operators with a custom user action.
 
 ```go
-eng := Engine{
-  Initializer: nil, // Use default random initializer
+eng := engine.Engine{
+  Initializer: nil, // Use default random initializer with max value = 1
   Selection: operator.MultiSelection{}.
-    Use(0.5, operator.RouletteSelection{}),               // 50% chance to use roulette selection
+    Use(0.5, operator.RouletteSelection{}).               // 50% chance to use roulette selection
     Otherwise(operator.TournamentSelection{Fighters: 3}), // Otherwise, use tournament selection with 3 fighters
   CrossOver: operator.MultiCrossOver{}.
-    Use(1, operator.UniformCrossOver{})   // 100% chance to apply uniform crossover
+    Use(1, operator.UniformCrossOver{}),  // 100% chance to apply uniform crossover
   Mutation: operator.MultiMutation{}.
     Use(0.1, operator.UniformMutation{}), // 10% chance to apply a mution, each bit has 50% chance to be changed
   Survivor: operator.MultiSurvivor{}.
-    Use(0.1, operator.SurvivorRank{}).    // 10% to use the ranking selection
-    Otherwise(operator.SurvivorElite{}),  // Otherwise, only keep best individuals to create the new population
+    Use(0.1, operator.RankSurvivor{}).    // 10% to use the ranking selection
+    Otherwise(operator.EliteSurvivor{}),  // Otherwise, only keep best individuals to create the new population
   Termination: operator.MultiTermination{}.
     Use(&operator.GenerationTermination{K: 50}).               // Stop at generation #50
     Use(&operator.ImprovementTermination{}).                   // Or stop if total fitness has not been improved
@@ -229,7 +229,10 @@ eng := Engine{
     elite := pop.Elite()
     fmt.Printf(
       "Generation #%d, fit: %f, tot: %f, str: %s\n",
-      pop.Stats.GenerationNb, elite.Fitness, pop.Stats.TotalFitness, string(elite.Code.ToBytes()),
+      pop.Stats.GenerationNb,
+      elite.Fitness,
+      pop.Stats.TotalFitness,
+      string(elite.Code.ToBytes()),
     )
   },
 }
@@ -237,11 +240,23 @@ eng := Engine{
 
 ### Run the engine
 
-Launch processing using `Run`. It will return:
+Launch processing using `Run`.
 
-* an error if process failed
-* the ending condition raised
-* the last population generated
+Input parameters required:
+
+parameter | definition
+--------- | ----------
+`popSize`  | The number of individuals in each generation
+`bitsSize` | The number of bits for each individual
+`fitness`  | The fitness method used to evaluate an individual<br>The result has to **increase** with the fact that the individual is **fitted** for the current problem.
+
+It will return:
+
+parameter | definition
+--------- | ----------
+`last`        | The last population generated
+`termination` | The ending condition raised
+`err`         | An error if process failed
 
 ```go
 popSize := 100 // nb of individuals in init population
@@ -252,9 +267,9 @@ var fitness gene.FitnessFct = func(bits gene.Bits) float64 {
 }
 
 last, termination, err := eng.Run(popSize, bitsSize, fitness)
-// err: not nil if an error occurred
-// termination: the termination condition used to stop processing (can be ignored)
 // last: the last generation
+// termination: the termination condition used to stop processing (can be ignored)
+// err: not nil if an error occurred
 ```
 
 ## Annex

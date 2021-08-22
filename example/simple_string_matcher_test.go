@@ -37,7 +37,7 @@ func TestSimpleStringMatcher(t *testing.T) {
 			Initializer: gene.NewRandomInitializer(1),
 			Selection:   operator.RouletteSelection{},
 			CrossOver:   operator.UniformCrossOver{},
-			Survivor:    operator.SurvivorElite{},
+			Survivor:    operator.EliteSurvivor{},
 			Termination: perfectFitness,
 			OnNewGeneration: func(pop gene.Population) {
 				elite := pop.Elite()

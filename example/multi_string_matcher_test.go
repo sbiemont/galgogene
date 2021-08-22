@@ -44,8 +44,8 @@ func TestStringMatcher(t *testing.T) {
 			Mutation: operator.MultiMutation{}.
 				Use(0.05, operator.UniformMutation{}), // 5% chance to mutate (with 50% chance of changing each bits)
 			Survivor: operator.MultiSurvivor{}.
-				Use(0.9, operator.SurvivorElite{}).
-				Otherwise(operator.SurvivorChildren{}),
+				Use(0.9, operator.EliteSurvivor{}).
+				Otherwise(operator.ChildrenSurvivor{}),
 			Termination: operator.MultiTermination{}.
 				Use(&operator.GenerationTermination{K: 100}).              // End at generation #100
 				Use(&operator.ImprovementTermination{}).                   // End when total fitness cannot be improved

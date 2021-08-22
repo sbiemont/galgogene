@@ -32,7 +32,7 @@ func TestSurvivor(t *testing.T) {
 		Convey("when keep best fitness", func() {
 			p1 := pop1()
 			p2 := pop2()
-			srv := SurvivorElite{}
+			srv := EliteSurvivor{}
 			srv.Survive(p1, &p2)
 			So(p1.Individuals, ShouldResemble, []gene.Individual{ // pop1 unchanged
 				{Fitness: 0.1, Rank: 1},
@@ -51,7 +51,7 @@ func TestSurvivor(t *testing.T) {
 		Convey("when keep minimum ranking", func() {
 			p1 := pop1()
 			p2 := pop2()
-			srv := SurvivorRank{}
+			srv := RankSurvivor{}
 			srv.Survive(p1, &p2)
 			So(p1.Individuals, ShouldResemble, []gene.Individual{ // pop1 unchanged
 				{Fitness: 0.1, Rank: 1},
