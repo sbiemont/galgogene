@@ -154,9 +154,9 @@ It is also possible to apply an **ordered** list of surviving actions, closing w
 ```go
 // New multi surviving operator
 survivor := operator.MultiSurvivor{}.
-  Use(0.75, EliteSurvivor{}).    // Only keep the best individuals in the new generation
-  Use(0.25, RankSurvivor{}).     // Or, only keep the least ranked individuals in the new generation
-  Otherwise(ChildrenSurvivor{})  // Otherwise, only keep new generated children
+  Use(0.75, operator.EliteSurvivor{}).    // Only keep the best individuals in the new generation
+  Use(0.25, operator.RankSurvivor{}).     // Or, only keep the least ranked individuals in the new generation
+  Otherwise(operator.ChildrenSurvivor{})  // Otherwise, only keep new generated children
 ```
 
 ### Termination operator
@@ -172,7 +172,7 @@ termination | description | parameters
 
 ```go
 // New simple termination operator
-termination := operator.GenerationTermination{K: 50}
+termination := &operator.GenerationTermination{K: 50}
 ```
 
 It is also possible to check a list of possible ending conditions, using a `MultiTermination`.
@@ -180,22 +180,25 @@ It is also possible to check a list of possible ending conditions, using a `Mult
 ```go
 // New multi termination operator
 termination := operator.MultiTermination{}.
-  Use(operator.GenerationTermination{K: 50}).                   // Check if generation #50 is reached
-  Use(operator.FitnessTermination{Fitness: 1}).                 // Check if Fitness=1 is reached
-  Use(operator.DurationTermination{Duration: 10 * time.Second}) // Check that the sum of computation time of each generation is limited to 10s
+  Use(&operator.GenerationTermination{K: 50}).                   // Check if generation #50 is reached
+  Use(&operator.FitnessTermination{Fitness: 1}).                 // Check if Fitness=1 is reached
+  Use(&operator.DurationTermination{Duration: 10 * time.Second}) // Check that the sum of computation time of each generation is limited to 10s
 ```
 
 ## The engine
 
-An engine combines all [operators](#the-operators) and
-an optional custom user action (`OnNewGeneration`) called each time a new generation is ready.
+An engine combines:
+
+* all [operators](#the-operators)
+* an optional custom user action (`OnNewGeneration`) called each time a new generation is ready
 
 ### Simple engine
 
-Define minimalistic operators for an engine, without the custom action.
+This example defines minimalistic operators for an engine, without the custom action.
 
 ```go
 eng := engine.Engine{
+  Initializer: nil,                                        // Use default random initializer with max value = 1
   Selection:   operator.RouletteSelection{},               // Simple selection
   CrossOver:   operator.UniformCrossOver{},                // Simple crossover
   Survivor:    operator.EliteSurvivor{},                   // Simple survivor
@@ -205,11 +208,11 @@ eng := engine.Engine{
 
 ### Complex engine
 
-Define all multi operators with a custom user action.
+This example defines all multi operators with a custom user action.
 
 ```go
 eng := engine.Engine{
-  Initializer: nil, // Use default random initializer with max value = 1
+  Initializer: operator.NewRandomInitializer(1), // Use default random initializer with max value = 1
   Selection: operator.MultiSelection{}.
     Use(0.5, operator.RouletteSelection{}).               // 50% chance to use roulette selection
     Otherwise(operator.TournamentSelection{Fighters: 3}), // Otherwise, use tournament selection with 3 fighters
@@ -244,17 +247,18 @@ Launch processing using `Run`.
 
 Input parameters required:
 
-parameter | definition
---------- | ----------
+parameter  | definition
+---------- | ----------
 `popSize`  | The number of individuals in each generation
 `bitsSize` | The number of bits for each individual
-`fitness`  | The fitness method used to evaluate an individual<br>The result has to **increase** with the fact that the individual is **fitted** for the current problem.
+`fitness`  | The fitness method used to evaluate an individual<br>The result has to **increase** with the fact that the individual is **fitted** for the current problem<br>If the solution is to minimise $x$, inverse it to compute maximise the fitness ($fitness=1/x$)
 
 It will return:
 
 parameter | definition
 --------- | ----------
 `last`        | The last population generated
+`best`        | The best population (with the maximum total fitness computed)
 `termination` | The ending condition raised
 `err`         | An error if process failed
 
@@ -266,8 +270,9 @@ var fitness gene.FitnessFct = func(bits gene.Bits) float64 {
   return 1
 }
 
-last, termination, err := eng.Run(popSize, bitsSize, fitness)
+last, best, termination, err := eng.Run(popSize, bitsSize, fitness)
 // last: the last generation
+// best: the best generation
 // termination: the termination condition used to stop processing (can be ignored)
 // err: not nil if an error occurred
 ```

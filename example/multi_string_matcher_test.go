@@ -66,9 +66,10 @@ func TestStringMatcher(t *testing.T) {
 
 		// Run and check output
 		popSize := 100
-		last, termination, err := eng.Run(popSize, bitsSize, fitness)
+		last, best, termination, err := eng.Run(popSize, bitsSize, fitness)
 		So(err, ShouldBeNil)
 		So(termination, ShouldNotBeNil)
 		So(last.Individuals, ShouldHaveLength, popSize)
+		So(best.Individuals, ShouldHaveLength, popSize)
 	})
 }

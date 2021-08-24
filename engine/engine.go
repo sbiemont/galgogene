@@ -22,16 +22,17 @@ func (eng Engine) Run(
 	popSize,
 	bitsSize int,
 	fitness gene.FitnessFct,
-) (gene.Population, operator.Termination, error) {
+) (gene.Population, gene.Population, operator.Termination, error) {
 	if err := eng.check(); err != nil {
-		return gene.Population{}, nil, err
+		return gene.Population{}, gene.Population{}, nil, err
 	}
 
 	// Init new pop
 	population := gene.NewPopulation(popSize, fitness, eng.Initializer)
+	best := population
 	errInit := population.Init(bitsSize)
 	if errInit != nil {
-		return gene.Population{}, nil, errInit
+		return gene.Population{}, gene.Population{}, nil, errInit
 	}
 	eng.onNewGeneration(population)
 
@@ -43,14 +44,17 @@ func (eng Engine) Run(
 		var err error
 		population, err = eng.nextGeneration(population)
 		if err != nil {
-			return gene.Population{}, nil, err
+			return gene.Population{}, gene.Population{}, nil, err
 		}
 
 		// Custom action
 		eng.onNewGeneration(population)
+		if population.Stats.TotalFitness > best.Stats.TotalFitness {
+			best = population
+		}
 	}
 
-	return population, termination, nil
+	return population, best, termination, nil
 }
 
 // onNewGeneration calls the user method (only if defined)
