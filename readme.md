@@ -187,15 +187,18 @@ termination := operator.MultiTermination{}.
 
 ## The engine
 
-An engine combines all [operators](#the-operators) and
-an optional custom user action (`OnNewGeneration`) called each time a new generation is ready.
+An engine combines:
+
+* all [operators](#the-operators)
+* an optional custom user action (`OnNewGeneration`) called each time a new generation is ready
 
 ### Simple engine
 
-Define minimalistic operators for an engine, without the custom action.
+This example defines minimalistic operators for an engine, without the custom action.
 
 ```go
 eng := engine.Engine{
+  Initializer: nil,                                        // Use default random initializer with max value = 1
   Selection:   operator.RouletteSelection{},               // Simple selection
   CrossOver:   operator.UniformCrossOver{},                // Simple crossover
   Survivor:    operator.EliteSurvivor{},                   // Simple survivor
@@ -205,11 +208,11 @@ eng := engine.Engine{
 
 ### Complex engine
 
-Define all multi operators with a custom user action.
+This example defines all multi operators with a custom user action.
 
 ```go
 eng := engine.Engine{
-  Initializer: nil, // Use default random initializer with max value = 1
+  Initializer: operator.NewRandomInitializer(1), // Use default random initializer with max value = 1
   Selection: operator.MultiSelection{}.
     Use(0.5, operator.RouletteSelection{}).               // 50% chance to use roulette selection
     Otherwise(operator.TournamentSelection{Fighters: 3}), // Otherwise, use tournament selection with 3 fighters
@@ -244,8 +247,8 @@ Launch processing using `Run`.
 
 Input parameters required:
 
-parameter | definition
---------- | ----------
+parameter  | definition
+---------- | ----------
 `popSize`  | The number of individuals in each generation
 `bitsSize` | The number of bits for each individual
 `fitness`  | The fitness method used to evaluate an individual<br>The result has to **increase** with the fact that the individual is **fitted** for the current problem<br>If the solution is to minimise $x$, inverse it to compute maximise the fitness ($fitness=1/x$)
@@ -255,6 +258,7 @@ It will return:
 parameter | definition
 --------- | ----------
 `last`        | The last population generated
+`best`        | The best population (with the maximum total fitness computed)
 `termination` | The ending condition raised
 `err`         | An error if process failed
 
@@ -266,8 +270,9 @@ var fitness gene.FitnessFct = func(bits gene.Bits) float64 {
   return 1
 }
 
-last, termination, err := eng.Run(popSize, bitsSize, fitness)
+last, best, termination, err := eng.Run(popSize, bitsSize, fitness)
 // last: the last generation
+// best: the best generation
 // termination: the termination condition used to stop processing (can be ignored)
 // err: not nil if an error occurred
 ```

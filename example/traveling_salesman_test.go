@@ -80,9 +80,8 @@ func (cts cities) Fitness() float64 {
 
 func TestTravelingSalesmanProblem(t *testing.T) {
 	Convey("cities", t, func() {
-		seed := time.Now().Unix()
-		// var seed int64 = 1626634789
-		rand.Seed(seed)
+		// Rand init
+		rand.Seed(time.Now().Unix())
 
 		popSize := 300
 		eng := engine.Engine{
@@ -112,7 +111,7 @@ func TestTravelingSalesmanProblem(t *testing.T) {
 			},
 		}
 
-		last, _, err := eng.Run(popSize, 20, func(bits gene.Bits) float64 {
+		_, best, _, err := eng.Run(popSize, 20, func(bits gene.Bits) float64 {
 			cts := toCities(bits)
 			return cts.Fitness()
 		})
@@ -121,14 +120,13 @@ func TestTravelingSalesmanProblem(t *testing.T) {
 			panic(err)
 		}
 
-		elite := toCities(last.Elite().Code)
+		elite := toCities(best.Elite().Code)
 		fmt.Printf(
-			"\nGeneration #%d, dur: %s dist: %f, tot: %f,\nseed: %d\n%s, dst: %f\n",
-			last.Stats.GenerationNb,
-			last.Stats.TotalDuration,
+			"\nBest generation #%d, dur: %s dist: %f, tot: %f,\n%s, dst: %f\n",
+			best.Stats.GenerationNb,
+			best.Stats.TotalDuration,
 			elite.Distance(),
-			last.Stats.TotalFitness,
-			seed,
+			best.Stats.TotalFitness,
 			elite.String(),
 			elite.Distance(),
 		)
