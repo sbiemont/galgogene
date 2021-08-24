@@ -154,9 +154,9 @@ It is also possible to apply an **ordered** list of surviving actions, closing w
 ```go
 // New multi surviving operator
 survivor := operator.MultiSurvivor{}.
-  Use(0.75, EliteSurvivor{}).    // Only keep the best individuals in the new generation
-  Use(0.25, RankSurvivor{}).     // Or, only keep the least ranked individuals in the new generation
-  Otherwise(ChildrenSurvivor{})  // Otherwise, only keep new generated children
+  Use(0.75, operator.EliteSurvivor{}).    // Only keep the best individuals in the new generation
+  Use(0.25, operator.RankSurvivor{}).     // Or, only keep the least ranked individuals in the new generation
+  Otherwise(operator.ChildrenSurvivor{})  // Otherwise, only keep new generated children
 ```
 
 ### Termination operator
@@ -172,7 +172,7 @@ termination | description | parameters
 
 ```go
 // New simple termination operator
-termination := operator.GenerationTermination{K: 50}
+termination := &operator.GenerationTermination{K: 50}
 ```
 
 It is also possible to check a list of possible ending conditions, using a `MultiTermination`.
@@ -180,9 +180,9 @@ It is also possible to check a list of possible ending conditions, using a `Mult
 ```go
 // New multi termination operator
 termination := operator.MultiTermination{}.
-  Use(operator.GenerationTermination{K: 50}).                   // Check if generation #50 is reached
-  Use(operator.FitnessTermination{Fitness: 1}).                 // Check if Fitness=1 is reached
-  Use(operator.DurationTermination{Duration: 10 * time.Second}) // Check that the sum of computation time of each generation is limited to 10s
+  Use(&operator.GenerationTermination{K: 50}).                   // Check if generation #50 is reached
+  Use(&operator.FitnessTermination{Fitness: 1}).                 // Check if Fitness=1 is reached
+  Use(&operator.DurationTermination{Duration: 10 * time.Second}) // Check that the sum of computation time of each generation is limited to 10s
 ```
 
 ## The engine
@@ -248,7 +248,7 @@ parameter | definition
 --------- | ----------
 `popSize`  | The number of individuals in each generation
 `bitsSize` | The number of bits for each individual
-`fitness`  | The fitness method used to evaluate an individual<br>The result has to **increase** with the fact that the individual is **fitted** for the current problem.
+`fitness`  | The fitness method used to evaluate an individual<br>The result has to **increase** with the fact that the individual is **fitted** for the current problem<br>If the solution is to minimise $x$, inverse it to compute maximise the fitness ($fitness=1/x$)
 
 It will return:
 
