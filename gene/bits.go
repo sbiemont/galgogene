@@ -1,7 +1,7 @@
 package gene
 
 import (
-	"genalgo.git/random"
+	"galgogene.git/random"
 )
 
 var DefaultMaxValue uint8 = 1

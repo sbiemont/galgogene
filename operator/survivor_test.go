@@ -3,7 +3,7 @@ package operator
 import (
 	"testing"
 
-	"genalgo.git/gene"
+	"galgogene.git/gene"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

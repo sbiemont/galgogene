@@ -5,9 +5,9 @@ import (
 	"math/rand"
 	"testing"
 
-	"genalgo.git/engine"
-	"genalgo.git/gene"
-	"genalgo.git/operator"
+	"galgogene.git/engine"
+	"galgogene.git/gene"
+	"galgogene.git/operator"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

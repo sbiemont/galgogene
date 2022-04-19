@@ -3,7 +3,7 @@ package operator
 import (
 	"time"
 
-	"genalgo.git/gene"
+	"galgogene.git/gene"
 )
 
 // Termination defines an ending condition for the engine

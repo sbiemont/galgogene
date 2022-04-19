@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"genalgo.git/gene"
-	"genalgo.git/operator"
+	"galgogene.git/gene"
+	"galgogene.git/operator"
 )
 
 type Engine struct {

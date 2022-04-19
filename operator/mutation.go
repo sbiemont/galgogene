@@ -3,8 +3,8 @@ package operator
 import (
 	"math/rand"
 
-	"genalgo.git/gene"
-	"genalgo.git/random"
+	"galgogene.git/gene"
+	"galgogene.git/random"
 )
 
 // Mutation examples:

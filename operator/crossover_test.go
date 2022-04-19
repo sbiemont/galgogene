@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"genalgo.git/gene"
+	"galgogene.git/gene"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
