@@ -40,15 +40,14 @@ func TestStringMatcher(t *testing.T) {
 				Otherwise(operator.RouletteSelection{}),             // otherwise, use roulette
 			CrossOver: operator.MultiCrossOver{}.
 				Use(0.1, operator.TwoPointsCrossOver{}). // 10% chance to apply 2 points crossover
-				Use(1, operator.UniformCrossOver{}),     // 100% chance to apply uniform crossover
+				Use(0.8, operator.UniformCrossOver{}),   // 80% chance to apply uniform crossover
 			Mutation: operator.MultiMutation{}.
-				Use(0.05, operator.UniformMutation{}), // 5% chance to mutate (with 50% chance of changing each bits)
+				Use(0.1, operator.UniqueMutation{}), // 10% chance to mutate one bit
 			Survivor: operator.MultiSurvivor{}.
 				Use(0.9, operator.EliteSurvivor{}).
 				Otherwise(operator.ChildrenSurvivor{}),
 			Termination: operator.MultiTermination{}.
-				Use(&operator.GenerationTermination{K: 100}).              // End at generation #100
-				Use(&operator.ImprovementTermination{}).                   // End when total fitness cannot be improved
+				Use(&operator.GenerationTermination{K: 200}).              // End at generation #200
 				Use(&operator.FitnessTermination{Fitness: 1}).             // End with perfect fitness
 				Use(&operator.DurationTermination{Duration: time.Second}), // End after 1s
 			OnNewGeneration: func(pop gene.Population) {
@@ -71,5 +70,16 @@ func TestStringMatcher(t *testing.T) {
 		So(termination, ShouldNotBeNil)
 		So(last.Individuals, ShouldHaveLength, popSize)
 		So(best.Individuals, ShouldHaveLength, popSize)
+
+		// Print elite of best population
+		elite := best.Elite()
+		bytes, _ := szr.ToBytes(elite.Code)
+		fmt.Printf(
+			"Best #%d, fit: %f, tot: %f, str: %s\n",
+			best.Stats.GenerationNb,
+			best.Elite().Fitness,
+			best.Stats.TotalFitness,
+			string(bytes),
+		)
 	})
 }

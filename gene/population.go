@@ -75,9 +75,9 @@ func (pop *Population) Init(bitsSize int) error {
 
 // ComputeFitness computes an set all fitnesses for each individual
 // Compute
-//  * Individual fitness
-//  * Total fitness
-//  * Elite
+//   - Individual fitness
+//   - Total fitness
+//   - Elite
 func (pop *Population) ComputeFitness() {
 	pop.Stats.Elite = pop.Individuals[0]
 	for i, individual := range pop.Individuals {
@@ -92,8 +92,8 @@ func (pop *Population) ComputeFitness() {
 
 // ComputeTotalFitness restart computation of total fitness
 // Compute
-//  * Total fitness
-//  * Elite
+//   - Total fitness
+//   - Elite
 func (pop *Population) ComputeTotalFitness() {
 	pop.Stats.TotalFitness = 0
 	pop.Stats.Elite = pop.Individuals[0]

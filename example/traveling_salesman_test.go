@@ -93,9 +93,9 @@ func TestTravelingSalesmanProblem(t *testing.T) {
 				Use(0.2, operator.UniformOrderCrossOver{}).
 				Use(1, operator.DavisOrderCrossOver{}),
 			Mutation: operator.MultiMutation{}.
-				Use(0.15, operator.InversionPermutation{}),
+				Use(0.05, operator.InversionPermutation{}),
 			Survivor: operator.MultiSurvivor{}.
-				Use(0.9, operator.EliteSurvivor{}).
+				Use(0.5, operator.EliteSurvivor{}).
 				Otherwise(operator.ChildrenSurvivor{}),
 			Termination: operator.MultiTermination{}.
 				Use(&operator.GenerationTermination{K: 1000}).
