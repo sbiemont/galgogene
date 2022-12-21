@@ -4,7 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"galgogene.git/gene"
+	"github.com/sbiemont/galgogene/gene"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 

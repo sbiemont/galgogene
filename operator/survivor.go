@@ -3,8 +3,8 @@ package operator
 import (
 	"errors"
 
-	"galgogene.git/gene"
-	"galgogene.git/random"
+	"github.com/sbiemont/galgogene/gene"
+	"github.com/sbiemont/galgogene/random"
 )
 
 // Survivor defines an action to be applied on the current generation

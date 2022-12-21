@@ -3,8 +3,8 @@ package operator
 import (
 	"math/rand"
 
-	"galgogene.git/gene"
-	"galgogene.git/random"
+	"github.com/sbiemont/galgogene/gene"
+	"github.com/sbiemont/galgogene/random"
 )
 
 // Mutation examples:
@@ -63,8 +63,8 @@ type InversionPermutation struct{}
 
 // Mutate select 2 positions and inverts the subtour
 // eg.:
-//   * input:  AB.CDEF.GH
-//   * output: AB.FEDC.GH
+//   - input:  AB.CDEF.GH
+//   - output: AB.FEDC.GH
 func (InversionPermutation) Mutate(bits gene.Bits) gene.Bits {
 	return permutation(bits, func(in gene.Bits, out *gene.Bits, pos1, pos2 int) {
 		for i := pos1; i <= pos2; i++ {
@@ -80,8 +80,8 @@ type SramblePermutation struct{}
 
 // Mutate select 2 positions and shuffles the subtour
 // eg.:
-//   * input:  AB.CDEF.GH
-//   * output: AB.ECFD.GH
+//   - input:  AB.CDEF.GH
+//   - output: AB.ECFD.GH
 func (SramblePermutation) Mutate(bits gene.Bits) gene.Bits {
 	return permutation(bits, func(in gene.Bits, out *gene.Bits, pos1, pos2 int) {
 		indexes := rand.Perm(pos2 - pos1)

@@ -1,8 +1,8 @@
 package operator
 
 import (
-	"galgogene.git/gene"
-	"galgogene.git/random"
+	"github.com/sbiemont/galgogene/gene"
+	"github.com/sbiemont/galgogene/random"
 )
 
 // CrossOver defines the method to be used for mutating a selection of 2 set of bits
