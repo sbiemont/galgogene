@@ -4,8 +4,8 @@ import (
 	"errors"
 	"math/rand"
 
-	"galgogene.git/gene"
-	"galgogene.git/random"
+	"github.com/sbiemont/galgogene/gene"
+	"github.com/sbiemont/galgogene/random"
 )
 
 // selection: "https://en.wikipedia.org/wiki/Selection_(genetic_algorithm)"

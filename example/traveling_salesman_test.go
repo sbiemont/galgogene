@@ -8,9 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"galgogene.git/engine"
-	"galgogene.git/gene"
-	"galgogene.git/operator"
+	"github.com/sbiemont/galgogene/engine"
+	"github.com/sbiemont/galgogene/gene"
+	"github.com/sbiemont/galgogene/operator"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 

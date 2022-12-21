@@ -1,4 +1,4 @@
-module galgogene.git
+module github.com/sbiemont/galgogene
 
 go 1.19
 
