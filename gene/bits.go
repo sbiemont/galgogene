@@ -71,3 +71,10 @@ func (bits Bits) modulo(value uint8) uint8 {
 
 	return value % (bits.MaxValue + 1)
 }
+
+// Bytes extract the raw content into a slice of bytes
+func (bits Bits) Bytes() []byte {
+	result := make([]byte, len(bits.Raw))
+	copy(result, bits.Raw)
+	return result
+}
