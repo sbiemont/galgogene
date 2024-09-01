@@ -1,11 +1,15 @@
 module github.com/sbiemont/galgogene
 
-go 1.19
-
-require github.com/smartystreets/goconvey v1.6.4
+go 1.23
 
 require (
-	github.com/gopherjs/gopherjs v0.0.0-20210901121439-eee08aaf2717 // indirect
+	github.com/google/uuid v1.6.0
+	github.com/smartystreets/goconvey v1.8.1
+	golang.org/x/sync v0.8.0
+)
+
+require (
+	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
-	github.com/smartystreets/assertions v1.2.0 // indirect
+	github.com/smarty/assertions v1.16.0 // indirect
 )
