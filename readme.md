@@ -4,13 +4,22 @@ Galgogene is a simple implementation of a [genetic algorithm](https://en.wikiped
 
 ## Getting started
 
-For more example, see [/galgogene/example](https://github.com/sbiemont/galgogene/tree/master/example)
+Check the [examples](https://github.com/sbiemont/galgogene/tree/master/example), and run them:
+
+```shell
+# Find a simple input string using a minimalistic engine
+go run example/simple_string_matcher/main.go
+
+# Find a more complex string using a custom engine
+go run example/multi_string_matcher/main.go
+
+# Find the solution of the traveling salesman problem (with ~30 cities)
+go run example/traveling_salesman/main.go
+```
+
+These examples may not find the best solution. Your turn to customise them !
 
 See [annex](#annex) for general information about the main algorithm.
-
-## Roadmap
-
-* [ ] Force `Otherwise` method to be called for `Selection` and `Survivors`
 
 ## The operators
 
@@ -27,9 +36,9 @@ Before creating an engine, operators have to be defined:
 
 Initializes a set of bits for a new individual (during initialization step)
 
-initializer | description | parameters
------------ | ----------- | ----------
-`RandomInitializer` | Builds a list of full random bits | `MaxValue`: the maximum value to be stored
+initializer             | description | parameters
+----------------------- | ----------- | ----------
+`RandomInitializer`     | Builds a list of full random bits | `MaxValue`: the maximum value to be stored
 `PermuationInitializer` | Builds a list of shuffled indexes in [0 ; bits length[
 
 ```go
@@ -41,10 +50,12 @@ init := gene.NewRandomInitializer(1)
 
 This operator is used to select an individual from the population, each time the selection process is triggered.
 
-selection | description | parameters
--------- | ----------- | ----------
+selection             | description | parameters
+--------------------- | ----------- | ----------
 `RouletteSelection`   | Fitness proportionate selection
 `TournamentSelection` | Select *K* fighters and keep the best one | `Fighters`: number of fighters in a tournament
+`EliteSelection`      | Select the best individual of the current population
+`MultiSelection`      | Configure a set of different selections (see below)
 
 ```go
 // New simple selection
@@ -53,9 +64,9 @@ selection := operator.RouletteSelection{}
 
 It is also possible to have an **ordered** list of selections using `MultiSelection`.
 Each selection has a probability to be used: if the first selection is not chosen, try the second one and so on.
-If no selection has been chosen, the default one is used (an error will be raised by the `Engine` if no default selection is defined).
+If no selection has been chosen, the default one is used.
 
-For example, create a `Multiselection`:
+For example, create a `MultiSelection`, call `Use` to stack selections and close using `Otherwise`:
 
 ```go
 // New multi selection
@@ -73,13 +84,15 @@ Notes:
 * standard crossovers will mix values from both parents to create 2 new children
 * permutation crossovers will reorder values without changing them
 
-crossover | description | parameters
--------- | ----------- | ----------
-`OnePointCrossOver`  | Crossover with 1 randomly chosen point
-`TwoPointsCrossOver` | Crossover with 2 randomly chosen points
-`UniformCrossOver`   | Bit by bit crossover (with an equal probability of beeing chosen)
-`DavisOrderCrossOver` | Davis' order crossover (PX0), **permutation** that reorder the list of values
+crossover               | description | parameters
+----------------------- | ----------- | ----------
+`OnePointCrossOver`     | Crossover with 1 randomly chosen point
+`TwoPointsCrossOver`    | Crossover with 2 randomly chosen points
+`UniformCrossOver`      | Bit by bit crossover (with an equal probability of beeing chosen)
+`DavisOrderCrossOver`   | Davis' order crossover (PX0), **permutation** that reorder the list of values
 `UniformOrderCrossOver` | Uniform order crossover (PX1), **permutation** that reorder the list of values
+`MultiCrossOver`        | Configure a set of different crossovers (see below)
+
 
 ```go
 // New simple crossover
@@ -105,13 +118,14 @@ Notes:
 * a **mutation** overrides some bits with new random values
 * a **permutation** randomly reorders some bits (without changing the values)
 
-mutation | description | parameters
--------- | ----------- | ----------
-`UniqueMutation`  | Randomly choose one unique bit and change its value
-`UniformMutation` | Random mutation of bits (each bit has 50% chance to be changed)
+mutation               | description | parameters
+-------- ------------- | ----------- | ----------
+`UniqueMutation`       | Randomly choose one unique bit and change its value
+`UniformMutation`      | Random mutation of bits (each bit has 50% chance to be changed)
 `SwapPermutation`      | Random swap of 2 bits
 `InversionPermutation` | Randomly picks 2 points and inverts the subtour (eg.: `AB.CDEF.GH` will become `AB.FEDC.GH`)
 `SramblePermutation`   | Randomly picks 2 points and shuffles the subtour (eg.: `AB.CDEF.GH` will become `AB.ECFD.GH`)
+`MultiMutation`        | Configure a set of different mutations (see below)
 
 ```go
 // New simple mutation
@@ -138,37 +152,39 @@ mutation := operator.MultiMutation{}.
 Once chosen individuals have been mutated, they are injected in the next generation population.
 It is now time to select individuals from this new generation.
 
-survivor | description | parameters
--------- | ----------- | ----------
-`EliteSurvivor` | Select the elite from the surviving population
-`RankSurvivor`  | Select the individual with the smallest ranks
+survivor           | description | parameters
+------------------ | ----------- | ----------
+`EliteSurvivor`    | Select the elite from the surviving population
+`RankSurvivor`     | Select the individual with the smallest ranks
 `ChildrenSurvivor` | Keep the children in the new generation (limited to the parent pool size)
+`MultiSurvivor`    | Configure a set of different surviving behaviors (see below)
 
 ```go
 // New simple surviving operator
 survivor := operator.EliteSurvivor{}
 ```
 
-It is also possible to apply an **ordered** list of surviving actions, closing with `Otherwise`.
+Call `Use` to apply an **ordered** list of surviving actions, closing with `Otherwise`.
 
 ```go
 // New multi surviving operator
 survivor := operator.MultiSurvivor{}.
-  Use(0.75, operator.EliteSurvivor{}).    // Only keep the best individuals in the new generation
-  Use(0.25, operator.RankSurvivor{}).     // Or, only keep the least ranked individuals in the new generation
-  Otherwise(operator.ChildrenSurvivor{})  // Otherwise, only keep new generated children
+  Use(0.75, operator.EliteSurvivor{}).    // 75% chance to keep the best individuals in the new generation
+  Use(0.25, operator.RankSurvivor{}).     // Or, 25% chance to keep the least ranked individuals in the new generation
+  Otherwise(operator.ChildrenSurvivor{})  // Otherwise, keep new generated children
 ```
 
 ### Termination operator
 
 Define an ending operator that check if processing can be stopped.
 
-termination | description | parameters
------------ | ----------- | ----------
-`GenerationTermination` | Processing will end when the *K*<sup>th</sup> generation is reached | `K`: max generation to be reached
+termination              | description | parameters
+------------------------ | ----------- | ----------
+`GenerationTermination`  | Processing will end when the *K*<sup>th</sup> generation is reached | `K`: max generation to be reached
 `ImprovementTermination` | Processing will end when the total fitness has not increased since the previous generation | `K`: the number of generations that the improvement has to remain steady (default: 1)
-`FitnessTermination`  | Processing will end when the elite reaches the defined fitness | `Fitness`: min fitness
-`DurationTermination` | Processing will end when the total duration of each generation reaches a maximum | `Duration`: max duration
+`FitnessTermination`     | Processing will end when the elite reaches the defined fitness | `Fitness`: min fitness
+`DurationTermination`    | Processing will end when the total duration of each generation reaches a maximum | `Duration`: max duration
+`MultiTermination`       | Configure a set of different terminations (see below)
 
 ```go
 // New simple termination operator
@@ -253,14 +269,13 @@ parameter  | definition
 `bitsSize` | The number of bits for each individual
 `fitness`  | The fitness method used to evaluate an individual<br>The result has to **increase** with the fact that the individual is **fitted** for the current problem<br>If the solution is to minimise $x$, inverse it to compute maximise the fitness ($fitness=1/x$)
 
-It will return:
+It will return a `Solution` (and an error if any):
 
-parameter | definition
---------- | ----------
-`last`        | The last population generated
-`best`        | The best population (with the maximum total fitness computed)
-`termination` | The ending condition raised
-`err`         | An error if process failed
+parameter      | definition
+-------------- | ----------
+`PopWithBestIndividual`   | The population with the best individual (with the maximum fitness)
+`PopWithBestTotalFitness` | The best population (with the maximum total fitness computed)
+`Termination`             | The ending condition raised
 
 ```go
 popSize := 100 // nb of individuals in init population
@@ -270,11 +285,8 @@ var fitness gene.FitnessFct = func(bits gene.Bits) float64 {
   return 1
 }
 
-last, best, termination, err := eng.Run(popSize, bitsSize, fitness)
-// last: the last generation
-// best: the best generation
-// termination: the termination condition used to stop processing (can be ignored)
-// err: not nil if an error occurred
+// Run the engine
+solution, err := eng.Run(popSize, bitsSize, fitness)
 ```
 
 ## Annex
