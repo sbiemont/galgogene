@@ -22,12 +22,16 @@ func (OnePointCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 	return crossOver(bits1, bits2, random.Ints(0, bits1.Len(), 1))
 }
 
+// ------------------------------
+
 // TwoPointsCrossOver performs cross-over with 2 randomly chosen points
 type TwoPointsCrossOver struct{}
 
 func (TwoPointsCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 	return crossOver(bits1, bits2, random.Ints(0, bits1.Len(), 2))
 }
+
+// ------------------------------
 
 // UniformCrossOver performs a bit by bit cross-over from both parents with an equal probability of beeing chosen
 type UniformCrossOver struct{}
@@ -36,6 +40,8 @@ func (UniformCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 	return uniformCrossOver(bits1, bits2, 0.5)
 }
 
+// ------------------------------
+
 // DavisOrderCrossOver performs a Davis' order crossover (permutation)
 type DavisOrderCrossOver struct{}
 
@@ -43,6 +49,8 @@ func (DavisOrderCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 	pos := random.Ints(0, bits1.Len(), 2)
 	return davisOrderCrossOver(bits1, bits2, pos[0], pos[1]), davisOrderCrossOver(bits2, bits1, pos[0], pos[1])
 }
+
+// ------------------------------
 
 // UniformOrderCrossOver performs a uniform order crossover (permutation)
 type UniformOrderCrossOver struct{}
@@ -92,6 +100,8 @@ func (mco MultiCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 }
 
 // ------------------------------
+
+// Helpers
 
 // crossOver bits #1 with #2 using an ordered list of indexes
 // Returns the 2 resulting set of bits
