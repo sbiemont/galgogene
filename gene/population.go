@@ -4,18 +4,22 @@ import (
 	"errors"
 	"sort"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Individual represents the coded chain of bits with a given fitness
 type Individual struct {
-	Code    Bits    // Genetic data representation
-	Fitness float64 // Current fitness of the individual
-	Rank    int     // Generation number of the individual (starts at 0)
+	ID      uuid.UUID // Unique identifier for the individual
+	Code    Bits      // Genetic data representation
+	Fitness float64   // Current fitness of the individual
+	Rank    int       // Generation number of the individual (starts at 0)
 }
 
 // NewIndividual initializes a new individual instance
 func NewIndividual(code Bits) Individual {
 	return Individual{
+		ID:   uuid.New(),
 		Code: code,
 	}
 }
@@ -152,11 +156,19 @@ func (pop Population) Len() int {
 	return len(pop.Individuals)
 }
 
-// MapCount counts the number of different fitnesses
-func (pop Population) MapCount() int {
-	count := make(map[float64]interface{})
+// Unique returns a slice of unique individuals
+func (pop Population) Unique() []Individual {
+	// Extract unique individuals using their bits
+	unique := make(map[string]Individual)
 	for _, individual := range pop.Individuals {
-		count[individual.Fitness] = nil
+		key := string(individual.Code.Bytes())
+		unique[key] = individual
 	}
-	return len(count)
+
+	// Flatten individuals
+	result := make([]Individual, 0, len(unique))
+	for _, individual := range unique {
+		result = append(result, individual)
+	}
+	return result
 }

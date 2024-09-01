@@ -21,14 +21,14 @@ func TestMutations(t *testing.T) {
 		bits1 := newBits(make([]uint8, 8)) // empty 8 bits gene
 
 		Convey("when middle", func() {
-			rand.Seed(424242)
+			rand.New(rand.NewSource(424242))
 			pos1, pos2 := mutationPositions(bits1)
 			So(pos1, ShouldEqual, 2)
 			So(pos2, ShouldEqual, 6)
 		})
 
 		Convey("when first", func() {
-			rand.Seed(42)
+			rand.New(rand.NewSource(42))
 			pos1, pos2 := mutationPositions(bits1)
 			So(pos1, ShouldEqual, 1)
 			So(pos2, ShouldEqual, 3)
@@ -61,14 +61,14 @@ func TestMutations(t *testing.T) {
 		mutation := UniqueMutation{}
 
 		Convey("when middle", func() {
-			rand.Seed(424242) // pos: 6
+			rand.New(rand.NewSource(424242)) // pos: 6
 			result := mutation.Mutate(bits)
 			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
 			So(result.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 3, 8})
 		})
 
 		Convey("when first", func() {
-			rand.Seed(42) // pos: 1
+			rand.New(rand.NewSource(42)) // pos: 1
 			result := mutation.Mutate(bits)
 			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
 			So(result.Raw, ShouldResemble, []uint8{1, 3, 3, 4, 5, 6, 7, 8})
@@ -80,14 +80,14 @@ func TestMutations(t *testing.T) {
 		mutation := SwapPermutation{}
 
 		Convey("when middle", func() {
-			rand.Seed(424242)
+			rand.New(rand.NewSource(424242))
 			result := mutation.Mutate(bits)
 			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
 			So(result.Raw, ShouldResemble, []uint8{1, 2, 7, 4, 5, 6, 3, 8})
 		})
 
 		Convey("when first", func() {
-			rand.Seed(42)
+			rand.New(rand.NewSource(42))
 			result := mutation.Mutate(bits)
 			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
 			So(result.Raw, ShouldResemble, []uint8{1, 4, 3, 2, 5, 6, 7, 8})
@@ -99,14 +99,14 @@ func TestMutations(t *testing.T) {
 		mutation := InversionPermutation{}
 
 		Convey("when middle", func() {
-			rand.Seed(424242)
+			rand.New(rand.NewSource(424242))
 			result := mutation.Mutate(bits)
 			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
 			So(result.Raw, ShouldResemble, []uint8{1, 2, 7, 6, 5, 4, 3, 8})
 		})
 
 		Convey("when first", func() {
-			rand.Seed(42)
+			rand.New(rand.NewSource(42))
 			result := mutation.Mutate(bits)
 			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
 			So(result.Raw, ShouldResemble, []uint8{1, 4, 3, 2, 5, 6, 7, 8})
@@ -118,14 +118,14 @@ func TestMutations(t *testing.T) {
 		mutation := SramblePermutation{}
 
 		Convey("when middle", func() {
-			rand.Seed(424242)
+			rand.New(rand.NewSource(424242))
 			result := mutation.Mutate(bits)
 			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
 			So(result.Raw, ShouldResemble, []uint8{1, 2, 6, 3, 4, 5, 7, 8})
 		})
 
 		Convey("when first", func() {
-			rand.Seed(42)
+			rand.New(rand.NewSource(42))
 			result := mutation.Mutate(bits)
 			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
 			So(result.Raw, ShouldResemble, []uint8{1, 3, 2, 4, 5, 6, 7, 8})

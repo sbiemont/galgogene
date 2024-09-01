@@ -55,14 +55,11 @@ type probaSurvivor struct {
 }
 
 // MultiSurvivor defines a list of **ordered** surviving actions
-type MultiSurvivor struct {
-	survivors []probaSurvivor
-	deflt     Survivor
-}
+type MultiSurvivor []probaSurvivor
 
 // Use the given probabilistic survivor
 func (svr MultiSurvivor) Use(rate float64, survivor Survivor) MultiSurvivor {
-	svr.survivors = append(svr.survivors, probaSurvivor{
+	svr = append(svr, probaSurvivor{
 		rate:     rate,
 		survivor: survivor,
 	})
@@ -70,12 +67,21 @@ func (svr MultiSurvivor) Use(rate float64, survivor Survivor) MultiSurvivor {
 }
 
 // Otherwise defines the survivor to be used if no survivor have been picked
-func (svr MultiSurvivor) Otherwise(survivor Survivor) MultiSurvivor {
-	svr.deflt = survivor
-	return svr
+func (svr MultiSurvivor) Otherwise(survivor Survivor) multiSurvivor {
+	return multiSurvivor{
+		survivors: svr,
+		deflt:     survivor,
+	}
 }
 
-func (svr MultiSurvivor) Survive(parents gene.Population, survivors *gene.Population) error {
+// multiSurvivor defines a list of **ordered** surviving actions ending with a default one
+type multiSurvivor struct {
+	survivors []probaSurvivor
+	deflt     Survivor
+}
+
+// Survive applies one of the defined surviors 
+func (svr multiSurvivor) Survive(parents gene.Population, survivors *gene.Population) error {
 	// Check
 	if svr.deflt == nil {
 		return errors.New("no default survivor defined")

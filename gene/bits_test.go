@@ -64,6 +64,13 @@ func TestBits(t *testing.T) {
 				So(bits.Invert(2), ShouldEqual, 1)
 				So(bits.Invert(3), ShouldEqual, 0)
 			})
+
+			Convey("when bytes", func() {
+				bits := Bits{
+					Raw: []uint8{0, 1, 254, 255},
+				}
+				So(bits.Bytes(), ShouldResemble, []byte{0, 1, 254, 255})
+			})
 		})
 	})
 }

@@ -71,7 +71,7 @@ func (st TournamentSelection) Select(pop gene.Population) (gene.Individual, erro
 
 // ------------------------------
 
-// EliteSelection only select the best individual from population
+// EliteSelection selects the best individual from the population
 type EliteSelection struct{}
 
 func (EliteSelection) Select(pop gene.Population) (gene.Individual, error) {
@@ -88,30 +88,35 @@ type probaSelection struct {
 
 // MultiSelection defines an ordered list of selections each one with a given probability in [0 ; 1]
 // The first chosen selection ends processing. If no selection matches, an error is raised
-type MultiSelection struct {
-	selections []probaSelection
-	deflt      Selection
-}
+type MultiSelection []probaSelection
 
 // Use the given proba selection
 func (ms MultiSelection) Use(rate float64, selection Selection) MultiSelection {
-	ms.selections = append(ms.selections, probaSelection{
+	ms = append(ms, probaSelection{
 		rate: rate,
 		sel:  selection,
 	})
 	return ms
 }
 
-// Otherwise defines the survivor to be used if no selection have been picked
-func (ms MultiSelection) Otherwise(selection Selection) MultiSelection {
-	ms.deflt = selection
-	return ms
+// Otherwise defines the selection to be used if no selection have been picked
+func (ms MultiSelection) Otherwise(selection Selection) multiSelection {
+	return multiSelection{
+		selections: ms,
+		deflt:      selection,
+	}
+}
+
+// multiSelection ends the selection with a default behavior
+type multiSelection struct {
+	selections []probaSelection
+	deflt      Selection
 }
 
 // Select an individual
 // First, randomly choose a selection
 // Then, use the chosen selection on the current population
-func (ms MultiSelection) Select(pop gene.Population) (gene.Individual, error) {
+func (ms multiSelection) Select(pop gene.Population) (gene.Individual, error) {
 	if ms.deflt == nil {
 		return gene.Individual{}, errors.New("no default selector defined")
 	}

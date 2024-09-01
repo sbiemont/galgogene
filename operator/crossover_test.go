@@ -76,7 +76,7 @@ func TestCrossOvers(t *testing.T) {
 		bits1 := newBits([]uint8{1, 2, 3, 4, 5, 6, 7, 8, 9})
 		bits2 := newBits([]uint8{3, 4, 7, 2, 8, 9, 1, 6, 5})
 
-		rand.Seed(50)
+		rand.New(rand.NewSource(50))
 		res1, res2 := DavisOrderCrossOver{}.Mate(bits1, bits2)
 
 		So(res1, ShouldResemble, newBits([]uint8{3, 2, 8, 4, 5, 6, 7, 9, 1}))
