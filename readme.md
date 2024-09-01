@@ -119,7 +119,7 @@ Notes:
 * a **permutation** randomly reorders some bits (without changing the values)
 
 mutation               | description | parameters
--------- ------------- | ----------- | ----------
+---------------------- | ----------- | ----------
 `UniqueMutation`       | Randomly choose one unique bit and change its value
 `UniformMutation`      | Random mutation of bits (each bit has 50% chance to be changed)
 `SwapPermutation`      | Random swap of 2 bits
