@@ -19,17 +19,17 @@ func TestRanom(t *testing.T) {
 
 		Convey("byte", func() {
 			Convey("when min", func() {
-				rand.Seed(273)
+				rand.New(rand.NewSource(273))
 				So(Byte(), ShouldEqual, 0)
 			})
 
 			Convey("when random", func() {
-				rand.Seed(1)
+				rand.New(rand.NewSource(1))
 				So(Byte(), ShouldEqual, 33)
 			})
 
 			Convey("when max", func() {
-				rand.Seed(74)
+				rand.New(rand.NewSource(74))
 				So(Byte(), ShouldEqual, 255)
 			})
 		})

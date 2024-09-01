@@ -10,7 +10,7 @@ import (
 func TestInitializer(t *testing.T) {
 	Convey("initializer", t, func() {
 		Convey("random", func() {
-			rand.Seed(424242)
+			rand.New(rand.NewSource(424242))
 			initializer := RandomInitializer{
 				MaxValue: 8,
 			}
@@ -23,7 +23,7 @@ func TestInitializer(t *testing.T) {
 
 		Convey("permutation", func() {
 			Convey("when ok", func() {
-				rand.Seed(424242)
+				rand.New(rand.NewSource(424242))
 				initializer := PermuationInitializer{}
 				So(initializer.Check(8), ShouldBeNil)
 				So(initializer.Init(8), ShouldResemble, Bits{
