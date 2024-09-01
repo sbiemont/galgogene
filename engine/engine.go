@@ -8,6 +8,10 @@ import (
 	"github.com/sbiemont/galgogene/operator"
 )
 
+// Number of parallel go-routines for computations
+const nbGoRoutines int = 4
+
+// Engine is the core element for running the algorithm
 type Engine struct {
 	Initializer     gene.Initializer
 	Selection       operator.Selection
@@ -18,43 +22,61 @@ type Engine struct {
 	OnNewGeneration func(gene.Population)
 }
 
-func (eng Engine) Run(
-	popSize,
-	bitsSize int,
-	fitness gene.FitnessFct,
-) (gene.Population, gene.Population, operator.Termination, error) {
+// Solution after running the engine
+// * best population (with elite individual)
+// * best population (with max total fitness)
+// * termination operator triggered
+// * error (if any)
+type Solution struct {
+	PopWithBestIndividual   gene.Population      // Population with best computed individual
+	PopWithBestTotalFitness gene.Population      // Population with best total fitness computed
+	Termination             operator.Termination // Termination that triggered the end of computation
+}
+
+// Run the engine
+// * popSize: the number of individuals in a population
+// * bitsSize: number of bits in a gene (in one individual)
+// * fitness: the function that computes the gene's score
+func (eng Engine) Run(popSize, bitsSize int, fitness gene.FitnessFct) (Solution, error) {
 	if err := eng.check(); err != nil {
-		return gene.Population{}, gene.Population{}, nil, err
+		return Solution{}, err
 	}
 
 	// Init new pop
 	population := gene.NewPopulation(popSize, fitness, eng.Initializer)
-	best := population
+	withBestIndividual := population
+	withBestTotalFit := population
 	errInit := population.Init(bitsSize)
 	if errInit != nil {
-		return gene.Population{}, gene.Population{}, nil, errInit
+		return Solution{}, errInit
 	}
 	eng.onNewGeneration(population)
 
 	// Run until an ending condition is found
 	var termination operator.Termination
 	for ; termination == nil; termination = eng.Termination.End(population) {
-		time.Sleep(50 * time.Nanosecond)
 		// New generation
 		var err error
 		population, err = eng.nextGeneration(population)
 		if err != nil {
-			return gene.Population{}, gene.Population{}, nil, err
+			return Solution{}, err
 		}
 
 		// Custom action
 		eng.onNewGeneration(population)
-		if population.Stats.TotalFitness > best.Stats.TotalFitness {
-			best = population
+		if population.Stats.TotalFitness > withBestTotalFit.Stats.TotalFitness {
+			withBestTotalFit = population
+		}
+		if population.Stats.Elite.Fitness > withBestIndividual.Stats.Elite.Fitness {
+			withBestIndividual = population
 		}
 	}
 
-	return population, best, termination, nil
+	return Solution{
+		PopWithBestIndividual:   withBestIndividual,
+		PopWithBestTotalFitness: withBestTotalFit,
+		Termination:             termination,
+	}, nil
 }
 
 // onNewGeneration calls the user method (only if defined)
@@ -72,39 +94,45 @@ func (eng Engine) nextGeneration(parents gene.Population) (gene.Population, erro
 	popSize := len(parents.Individuals)
 	newPop := gene.NewPopulationFrom(2*popSize, parents)
 
-	for i := 0; i < popSize; i++ {
-		// Select 2 individuals
-		ind1, err1 := eng.Selection.Select(parents)
-		if err1 != nil {
-			return gene.Population{}, err1
-		}
-		ind2, err2 := eng.Selection.Select(parents)
-		if err2 != nil {
-			return gene.Population{}, err2
-		}
-		mut1, mut2 := ind1.Code, ind2.Code
+	err := runParallelBatch(popSize, nbGoRoutines, func(from, to, _ int) error {
+		for i := from; i < to; i++ {
+			// Select 2 individuals
+			ind1, err1 := eng.Selection.Select(parents)
+			if err1 != nil {
+				return err1
+			}
+			ind2, err2 := eng.Selection.Select(parents)
+			if err2 != nil {
+				return err2
+			}
+			mut1, mut2 := ind1.Code, ind2.Code
 
-		// Crossover
-		if eng.CrossOver != nil {
-			mut1, mut2 = eng.CrossOver.Mate(mut1, mut2)
-		}
+			// Crossover
+			if eng.CrossOver != nil {
+				mut1, mut2 = eng.CrossOver.Mate(mut1, mut2)
+			}
 
-		// Mutation
-		if eng.Mutation != nil {
-			mut1 = eng.Mutation.Mutate(mut1)
-			mut2 = eng.Mutation.Mutate(mut2)
-		}
+			// Mutation
+			if eng.Mutation != nil {
+				mut1 = eng.Mutation.Mutate(mut1)
+				mut2 = eng.Mutation.Mutate(mut2)
+			}
 
-		// Add new individuals to the new generation
-		newPop.Individuals[2*i] = gene.NewIndividual(mut1)
-		newPop.Individuals[2*i+1] = gene.NewIndividual(mut2)
+			// Add new individuals to the new generation
+			newPop.Individuals[2*i] = gene.NewIndividual(mut1)
+			newPop.Individuals[2*i+1] = gene.NewIndividual(mut2)
+		}
+		return nil
+	})
+	if err != nil {
+		return gene.Population{}, err
 	}
 
 	// Compute all fitnesses
 	newPop.ComputeFitness()
 
 	// Survivors
-	err := eng.Survivor.Survive(parents, &newPop)
+	err = eng.Survivor.Survive(parents, &newPop)
 	if err != nil {
 		return gene.Population{}, err
 	}
@@ -118,21 +146,16 @@ func (eng Engine) nextGeneration(parents gene.Population) (gene.Population, erro
 }
 
 func (eng Engine) check() error {
-	if eng.Selection == nil {
+	switch {
+	case eng.Selection == nil:
 		return errors.New("selection must be set")
-	}
-
-	if eng.CrossOver == nil {
+	case eng.CrossOver == nil:
 		return errors.New("crossover must be set")
-	}
-
-	if eng.Survivor == nil {
+	case eng.Survivor == nil:
 		return errors.New("survivor must be set")
-	}
-
-	if eng.Termination == nil {
+	case eng.Termination == nil:
 		return errors.New("termination must be set")
+	default:
+		return nil
 	}
-
-	return nil
 }
