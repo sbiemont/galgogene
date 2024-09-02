@@ -1,7 +1,6 @@
 package operator
 
 import (
-	"math/rand"
 	"testing"
 
 	"github.com/sbiemont/galgogene/gene"
@@ -74,13 +73,20 @@ func TestCrossOvers(t *testing.T) {
 
 	Convey("davis' order crossover", t, func() {
 		bits1 := newBits([]uint8{1, 2, 3, 4, 5, 6, 7, 8, 9})
-		bits2 := newBits([]uint8{3, 4, 7, 2, 8, 9, 1, 6, 5})
+		bits2 := newBits([]uint8{9, 8, 7, 6, 4, 5, 4, 3, 2, 1})
 
-		rand.New(rand.NewSource(50))
-		res1, res2 := DavisOrderCrossOver{}.Mate(bits1, bits2)
-
-		So(res1, ShouldResemble, newBits([]uint8{3, 2, 8, 4, 5, 6, 7, 9, 1}))
-		So(res2, ShouldResemble, newBits([]uint8{3, 4, 5, 2, 8, 9, 1, 6, 7}))
+		res0 := davisOrderCrossOver(bits1, bits2, 0, 0)
+		res1 := davisOrderCrossOver(bits1, bits2, 0, 1)
+		res2 := davisOrderCrossOver(bits1, bits2, 0, 4)
+		res3 := davisOrderCrossOver(bits1, bits2, 2, 5)
+		res4 := davisOrderCrossOver(bits1, bits2, 7, 8)
+		res5 := davisOrderCrossOver(bits1, bits2, 8, 8)
+		So(res0, ShouldResemble, newBits([]uint8{1, 9, 8, 7, 6, 4, 5, 3, 2}))
+		So(res1, ShouldResemble, newBits([]uint8{1, 2, 9, 8, 7, 6, 4, 5, 3}))
+		So(res2, ShouldResemble, newBits([]uint8{1, 2, 3, 4, 5, 9, 8, 7, 6}))
+		So(res3, ShouldResemble, newBits([]uint8{9, 8, 3, 4, 5, 6, 7, 2, 1}))
+		So(res4, ShouldResemble, newBits([]uint8{7, 6, 4, 5, 3, 2, 1, 8, 9}))
+		So(res5, ShouldResemble, newBits([]uint8{8, 7, 6, 4, 5, 3, 2, 1, 9}))
 	})
 
 	Convey("uniform order crossover", t, func() {

@@ -19,7 +19,7 @@ type CrossOver interface {
 type OnePointCrossOver struct{}
 
 func (OnePointCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
-	return crossOver(bits1, bits2, random.Ints(0, bits1.Len(), 1))
+	return crossOver(bits1, bits2, random.OrderedInts(0, bits1.Len(), 1))
 }
 
 // ------------------------------
@@ -28,7 +28,7 @@ func (OnePointCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 type TwoPointsCrossOver struct{}
 
 func (TwoPointsCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
-	return crossOver(bits1, bits2, random.Ints(0, bits1.Len(), 2))
+	return crossOver(bits1, bits2, random.OrderedInts(0, bits1.Len(), 2))
 }
 
 // ------------------------------
@@ -46,7 +46,7 @@ func (UniformCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
 type DavisOrderCrossOver struct{}
 
 func (DavisOrderCrossOver) Mate(bits1, bits2 gene.Bits) (gene.Bits, gene.Bits) {
-	pos := random.Ints(0, bits1.Len(), 2)
+	pos := random.OrderedInts(0, bits1.Len(), 2)
 	return davisOrderCrossOver(bits1, bits2, pos[0], pos[1]), davisOrderCrossOver(bits2, bits1, pos[0], pos[1])
 }
 
@@ -190,6 +190,13 @@ func (fnd finder) used(value uint8) {
 	fnd.uniq[value] = nil
 }
 
+// davisOrderCrossOver replaces values from bits2 to bits1
+// pos:   0 1 2 3 4 5 6 7 8
+// bits1: A B C D E F G H I
+// bits2: I H G F E D C B A
+// pos: [1 ; 3]
+// res:   - - C D E F - - - (copy bits1 from pos1 to pos2)
+// res:   I H C D E F G B A (copy bits2 one by one except data already present in res)
 func davisOrderCrossOver(bits1, bits2 gene.Bits, pos1, pos2 int) gene.Bits {
 	// Find unused value
 	fnd := newFinder()

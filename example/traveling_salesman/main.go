@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"math"
-	"math/rand"
 	"strings"
 	"time"
 
@@ -84,9 +83,6 @@ func (cts cities) Fitness() float64 {
 }
 
 func main() {
-	// Rand init
-	rand.New(rand.NewSource(42))
-
 	popSize := 600
 	eng := engine.Engine{
 		Initializer: gene.PermuationInitializer{},

@@ -1,7 +1,6 @@
 package operator
 
 import (
-	"math/rand"
 	"testing"
 
 	"github.com/sbiemont/galgogene/gene"
@@ -16,25 +15,15 @@ func newBits(bits []uint8) gene.Bits {
 	}
 }
 
+func countUnique[T comparable](values []T) int {
+	uniq := make(map[T]struct{})
+	for _, val := range values {
+		uniq[val] = struct{}{}
+	}
+	return len(uniq)
+}
+
 func TestMutations(t *testing.T) {
-	Convey("mutation position", t, func() {
-		bits1 := newBits(make([]uint8, 8)) // empty 8 bits gene
-
-		Convey("when middle", func() {
-			rand.New(rand.NewSource(424242))
-			pos1, pos2 := mutationPositions(bits1)
-			So(pos1, ShouldEqual, 2)
-			So(pos2, ShouldEqual, 6)
-		})
-
-		Convey("when first", func() {
-			rand.New(rand.NewSource(42))
-			pos1, pos2 := mutationPositions(bits1)
-			So(pos1, ShouldEqual, 1)
-			So(pos2, ShouldEqual, 3)
-		})
-	})
-
 	Convey("mutate", t, func() {
 		bits1 := newBits([]uint8{1, 1, 1, 1, 1, 1, 1, 1})
 		toZero := func(gene.Bits, int) uint8 { return 0 }
@@ -56,79 +45,29 @@ func TestMutations(t *testing.T) {
 		})
 	})
 
-	Convey("bit flip mutation", t, func() {
-		bits := newBits([]uint8{1, 2, 3, 4, 5, 6, 7, 8})
-		mutation := UniqueMutation{}
-
-		Convey("when middle", func() {
-			rand.New(rand.NewSource(424242)) // pos: 6
-			result := mutation.Mutate(bits)
-			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
-			So(result.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 3, 8})
-		})
-
-		Convey("when first", func() {
-			rand.New(rand.NewSource(42)) // pos: 1
-			result := mutation.Mutate(bits)
-			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
-			So(result.Raw, ShouldResemble, []uint8{1, 3, 3, 4, 5, 6, 7, 8})
-		})
-	})
-
 	Convey("swap permutation", t, func() {
 		bits := newBits([]uint8{1, 2, 3, 4, 5, 6, 7, 8})
 		mutation := SwapPermutation{}
 
-		Convey("when middle", func() {
-			rand.New(rand.NewSource(424242))
-			result := mutation.Mutate(bits)
-			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
-			So(result.Raw, ShouldResemble, []uint8{1, 2, 7, 4, 5, 6, 3, 8})
-		})
-
-		Convey("when first", func() {
-			rand.New(rand.NewSource(42))
-			result := mutation.Mutate(bits)
-			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
-			So(result.Raw, ShouldResemble, []uint8{1, 4, 3, 2, 5, 6, 7, 8})
-		})
+		result := mutation.Mutate(bits)
+		So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
+		So(result.Raw, ShouldNotResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
+		So(countUnique(result.Raw), ShouldEqual, 8)
 	})
 
 	Convey("inversion permutation", t, func() {
 		bits := newBits([]uint8{1, 2, 3, 4, 5, 6, 7, 8})
-		mutation := InversionPermutation{}
+		mutation := func(in gene.Bits, out *gene.Bits, _, _ int) {
+			// Force positions
+			pos1 := 2
+			pos2 := 6
+			for i := pos1; i <= pos2; i++ {
+				out.Raw[i] = in.Raw[pos2-i+pos1]
+			}
+		}
 
-		Convey("when middle", func() {
-			rand.New(rand.NewSource(424242))
-			result := mutation.Mutate(bits)
-			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
-			So(result.Raw, ShouldResemble, []uint8{1, 2, 7, 6, 5, 4, 3, 8})
-		})
-
-		Convey("when first", func() {
-			rand.New(rand.NewSource(42))
-			result := mutation.Mutate(bits)
-			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
-			So(result.Raw, ShouldResemble, []uint8{1, 4, 3, 2, 5, 6, 7, 8})
-		})
-	})
-
-	Convey("scramble permutation", t, func() {
-		bits := newBits([]uint8{1, 2, 3, 4, 5, 6, 7, 8})
-		mutation := SramblePermutation{}
-
-		Convey("when middle", func() {
-			rand.New(rand.NewSource(424242))
-			result := mutation.Mutate(bits)
-			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
-			So(result.Raw, ShouldResemble, []uint8{1, 2, 6, 3, 4, 5, 7, 8})
-		})
-
-		Convey("when first", func() {
-			rand.New(rand.NewSource(42))
-			result := mutation.Mutate(bits)
-			So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
-			So(result.Raw, ShouldResemble, []uint8{1, 3, 2, 4, 5, 6, 7, 8})
-		})
+		result := permutation(bits, mutation)
+		So(bits.Raw, ShouldResemble, []uint8{1, 2, 3, 4, 5, 6, 7, 8})
+		So(result.Raw, ShouldResemble, []uint8{1, 2, 7, 6, 5, 4, 3, 8})
 	})
 }

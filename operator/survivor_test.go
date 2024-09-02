@@ -34,7 +34,8 @@ func TestSurvivor(t *testing.T) {
 			p1 := pop1()
 			p2 := pop2()
 			srv := EliteSurvivor{}
-			srv.Survive(p1, &p2)
+			err := srv.Survive(p1, &p2)
+			So(err, ShouldBeNil)
 			So(p1.Individuals, ShouldResemble, []gene.Individual{ // pop1 unchanged
 				{Fitness: 0.1, Rank: 1},
 				{Fitness: 0.5, Rank: 5},
@@ -53,7 +54,8 @@ func TestSurvivor(t *testing.T) {
 			p1 := pop1()
 			p2 := pop2()
 			srv := RankSurvivor{}
-			srv.Survive(p1, &p2)
+			err := srv.Survive(p1, &p2)
+			So(err, ShouldBeNil)
 			So(p1.Individuals, ShouldResemble, []gene.Individual{ // pop1 unchanged
 				{Fitness: 0.1, Rank: 1},
 				{Fitness: 0.5, Rank: 5},
