@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 
 	"github.com/sbiemont/galgogene/engine"
 	"github.com/sbiemont/galgogene/gene"
@@ -12,7 +11,6 @@ import (
 func main() {
 	szr, _ := gene.NewSerializer(8)
 
-	rand.New(rand.NewSource(2))
 	targetStr := "This is my first string matcher!"
 	// targetStr := "Hello world!"
 	targetBits := szr.ToBits([]byte(targetStr))
@@ -41,7 +39,7 @@ func main() {
 			elite := pop.Elite()
 			bytes, _ := szr.ToBytes(elite.Code)
 			fmt.Printf(
-				"Generation #%d, dur: %s fit: %f, tot: %f, str: %s\n",
+				"Generation #%d, dur: %11s fit: %f, tot: %f, str: %s\n",
 				pop.Stats.GenerationNb,
 				pop.Stats.TotalDuration,
 				elite.Fitness,

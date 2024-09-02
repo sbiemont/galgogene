@@ -5,8 +5,11 @@ import (
 	"sort"
 )
 
-// Ints builds an ordered list of k random integers in [min ; max[
-func Ints(min, max, k int) []int {
+// random: group here all calls to package "math/rand"
+
+// OrderedInts builds an ordered list of k random integers in [min ; max[
+// ex: [1, 2, 2, 9]
+func OrderedInts(min, max, k int) []int {
 	dm := max - min
 	result := make([]int, k)
 	for i := 0; i < k; i++ {
@@ -23,7 +26,7 @@ func Byte() uint8 {
 	return uint8(rand.Intn(256))
 }
 
-// Peek checks if the random generated rate in [0 ; 1[ matches the given one
+// Peek checks if the random generated rate in [0 ; 1[ matches the given rate
 func Peek(rate float64) bool {
 	return Percent() < rate
 }
@@ -31,4 +34,14 @@ func Peek(rate float64) bool {
 // Percent returns a random percentage in [0 ; 1[
 func Percent() float64 {
 	return rand.Float64()
+}
+
+// Perm returns a permutation of n ints
+func Perm(n int) []int {
+	return rand.Perm(n)
+}
+
+// Intn returns a random int in [0; n[
+func Intn(n int) int {
+	return rand.Intn(n)
 }

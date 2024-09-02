@@ -3,7 +3,8 @@ package gene
 import (
 	"errors"
 	"math"
-	"math/rand"
+
+	"github.com/sbiemont/galgogene/random"
 )
 
 // Initializer is in charge of the individuals code initialization
@@ -51,7 +52,7 @@ func (PermuationInitializer) Check(bitsSize int) error {
 
 func (PermuationInitializer) Init(bitsSize int) Bits {
 	result := NewBits(bitsSize, uint8(bitsSize))
-	for i, value := range rand.Perm(bitsSize) {
+	for i, value := range random.Perm(bitsSize) {
 		result.Raw[i] = uint8(value)
 	}
 	return result

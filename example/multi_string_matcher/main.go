@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/sbiemont/galgogene/engine"
@@ -13,7 +12,6 @@ import (
 // Example with multi criteria for string matcher
 func main() {
 	szr, _ := gene.NewSerializer(8)
-	rand.New(rand.NewSource(time.Now().Unix()))
 
 	targetStr := "This is my first genetic algorithm using multi string matcher with a custom engine!"
 	targetBits := szr.ToBits([]byte(targetStr))

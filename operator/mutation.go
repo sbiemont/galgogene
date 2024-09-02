@@ -1,8 +1,6 @@
 package operator
 
 import (
-	"math/rand"
-
 	"github.com/sbiemont/galgogene/gene"
 	"github.com/sbiemont/galgogene/random"
 )
@@ -23,9 +21,9 @@ type Mutation interface {
 // UniqueMutation selects one unique bit and flips its value (using the max value)
 type UniqueMutation struct{}
 
-// Mutate each bit with a probability of 50%
+// Mutate a unique bit in the gene
 func (UniqueMutation) Mutate(bits gene.Bits) gene.Bits {
-	i := rand.Intn(bits.Len())
+	i := random.Intn(bits.Len())
 	result := bits.Clone()
 	result.Raw[i] = result.Rand()
 	return result
@@ -84,7 +82,7 @@ type SramblePermutation struct{}
 //   - output: AB.ECFD.GH
 func (SramblePermutation) Mutate(bits gene.Bits) gene.Bits {
 	return permutation(bits, func(in gene.Bits, out *gene.Bits, pos1, pos2 int) {
-		indexes := rand.Perm(pos2 - pos1)
+		indexes := random.Perm(pos2 - pos1)
 		for i, index := range indexes {
 			out.Raw[pos1+i] = in.Raw[pos1+index]
 		}
@@ -134,14 +132,8 @@ func mutate(bits gene.Bits, rate float64, fct func(gene.Bits, int) uint8) gene.B
 	return result
 }
 
-// mutationPositions helps creating 2 random positions in [0 ; bits.Len[
-func mutationPositions(bits gene.Bits) (int, int) {
-	pos := random.Ints(0, bits.Len(), 2)
-	return pos[0], pos[1]
-}
-
 func permutation(bits gene.Bits, apply func(in gene.Bits, out *gene.Bits, pos1, pos2 int)) gene.Bits {
-	pos := random.Ints(0, bits.Len(), 2)
+	pos := random.OrderedInts(0, bits.Len(), 2)
 	result := bits.Clone()
 	apply(bits, &result, pos[0], pos[1])
 	return result
