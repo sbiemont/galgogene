@@ -26,13 +26,13 @@ func TestInitializer(t *testing.T) {
 
 		Convey("permutation", func() {
 			Convey("when ok", func() {
-				initializer := PermuationInitializer{}
+				initializer := PermutationInitializer{}
 				So(initializer.Check(8), ShouldBeNil)
 				So(countUnique(initializer.Init(8).Raw), ShouldEqual, 8)
 			})
 
 			Convey("when error", func() {
-				initializer := PermuationInitializer{}
+				initializer := PermutationInitializer{}
 				So(initializer.Check(256), ShouldNotBeNil)
 			})
 		})

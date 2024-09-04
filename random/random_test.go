@@ -21,7 +21,7 @@ func TestRandom(t *testing.T) {
 		})
 
 		Convey("byte", func() {
-			So(Byte(), ShouldBeBetween, 0, 255)
+			So(Byte(), ShouldBeBetweenOrEqual, 0, 255)
 		})
 	})
 }

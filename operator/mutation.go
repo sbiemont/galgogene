@@ -73,14 +73,14 @@ func (InversionPermutation) Mutate(bits gene.Bits) gene.Bits {
 
 // ------------------------------
 
-// SramblePermutation picks 2 points and shuffles the subtour
-type SramblePermutation struct{}
+// ScramblePermutation picks 2 points and shuffles the subtour
+type ScramblePermutation struct{}
 
 // Mutate select 2 positions and shuffles the subtour
 // eg.:
 //   - input:  AB.CDEF.GH
 //   - output: AB.ECFD.GH
-func (SramblePermutation) Mutate(bits gene.Bits) gene.Bits {
+func (ScramblePermutation) Mutate(bits gene.Bits) gene.Bits {
 	return permutation(bits, func(in gene.Bits, out *gene.Bits, pos1, pos2 int) {
 		indexes := random.Perm(pos2 - pos1)
 		for i, index := range indexes {
