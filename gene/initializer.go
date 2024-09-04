@@ -30,7 +30,10 @@ func NewRandomInitializer(maxValue uint8) RandomInitializer {
 	}
 }
 
-func (RandomInitializer) Check(_ int) error {
+func (izr RandomInitializer) Check(_ int) error {
+	if izr.MaxValue == 0 {
+		return errors.New("initializer max value cannot be 0")
+	}
 	return nil
 }
 
@@ -40,17 +43,17 @@ func (izr RandomInitializer) Init(bitsSize int) Bits {
 
 // ------------------------------
 
-// PermuationInitializer builds a list of shuffled permuations
-type PermuationInitializer struct{}
+// PermutationInitializer builds a list of shuffled permutations
+type PermutationInitializer struct{}
 
-func (PermuationInitializer) Check(bitsSize int) error {
+func (PermutationInitializer) Check(bitsSize int) error {
 	if bitsSize > math.MaxUint8 {
 		return errors.New("bitsSize too big")
 	}
 	return nil
 }
 
-func (PermuationInitializer) Init(bitsSize int) Bits {
+func (PermutationInitializer) Init(bitsSize int) Bits {
 	result := NewBits(bitsSize, uint8(bitsSize))
 	for i, value := range random.Perm(bitsSize) {
 		result.Raw[i] = uint8(value)

@@ -85,17 +85,17 @@ func (cts cities) Fitness() float64 {
 func main() {
 	popSize := 600
 	eng := engine.Engine{
-		Initializer: gene.PermuationInitializer{},
+		Initializer: gene.PermutationInitializer{},
 		Selection: operator.MultiSelection{}.
 			Use(0.01, operator.EliteSelection{}).
 			Otherwise(operator.RouletteSelection{}),
 		CrossOver: operator.MultiCrossOver{}.
-			Use(0.2, operator.UniformOrderCrossOver{}).
-			Use(0.2, operator.DavisOrderCrossOver{}),
+			Use(0.1, operator.UniformOrderCrossOver{}).
+			Use(1.0, operator.DavisOrderCrossOver{}),
 		Mutation: operator.MultiMutation{}.
 			Use(0.05, operator.InversionPermutation{}).
 			Use(0.05, operator.SwapPermutation{}).
-			Use(0.05, operator.SramblePermutation{}),
+			Use(0.05, operator.ScramblePermutation{}),
 		Survivor: operator.MultiSurvivor{}.
 			Use(0.2, operator.RankSurvivor{}).
 			Use(0.6, operator.EliteSurvivor{}).

@@ -25,25 +25,30 @@ See [annex](#annex) for general information about the main algorithm.
 
 Before creating an engine, operators have to be defined:
 
-* [Initializer](#initializer-operator): initializes a new set of bits for a new  individual
-* [Selection](#selection-operator): selection method to fetch one individual from the population
-* [CrossOver](#crossover-operator): crossover method applied on the chosen individuals
-* [Mutation](#mutation-operator): mutation method applied after crossover
-* [Survivor](#survivor-operator): mutated individuals are added of the new pool, only select some "survivors"
-* [Termination](#termination-operator): ending conditions
+operator | description
+-------- | -----------
+[Initializer](#initializer-operator)      | initializes a new set of bits for a new  individual
+[Selection](#selection-operator)      | selection method to fetch one individual from the population
+[CrossOver](#crossover-operator)      | crossover method applied on the chosen individuals
+[Mutation](#mutation-operator)      | mutation method applied after crossover
+[Survivor](#survivor-operator)      | mutated individuals are added of the new pool, only select some "survivors"
+[Termination](#termination-operator)      | ending conditions
+
+**Note** that some operators are **incompatible** with each others.
+Use a [factory](#engine-with-a-factory) to ensure that the right operators are instanciated.
 
 ### Initializer operator
 
 Initializes a set of bits for a new individual (during initialization step)
 
-initializer             | description | parameters
------------------------ | ----------- | ----------
-`RandomInitializer`     | Builds a list of full random bits | `MaxValue`: the maximum value to be stored
-`PermuationInitializer` | Builds a list of shuffled indexes in [0 ; bits length[
+initializer              | description | parameters
+------------------------ | ----------- | ----------
+`RandomInitializer`      | Builds a list of full random bits | `MaxValue`: the maximum value to be stored
+`PermutationInitializer` | Builds a list of shuffled indexes in [0 ; bits length[
 
 ```go
 // New random initializer with max value = 1
-init := gene.NewRandomInitializer(1)
+init := gene.RandomInitializer{MaxValue: 1}
 ```
 
 ### Selection operator
@@ -63,7 +68,7 @@ selection := operator.RouletteSelection{}
 ```
 
 It is also possible to have an **ordered** list of selections using `MultiSelection`.
-Each selection has a probability to be used: if the first selection is not chosen, try the second one and so on.
+Each selection has its own probability to be triggered (in [0 ; 1]): if the first selection is not chosen, try the second one and so on.
 If no selection has been chosen, the default one is used.
 
 For example, create a `MultiSelection`, call `Use` to stack selections and close using `Otherwise`:
@@ -93,13 +98,14 @@ crossover               | description | parameters
 `UniformOrderCrossOver` | Uniform order crossover (PX1), **permutation** that reorder the list of values
 `MultiCrossOver`        | Configure a set of different crossovers (see below)
 
-
 ```go
 // New simple crossover
 crossover := operator.OnePointCrossOver{}
 ```
 
 It is also possible to apply an **ordered** list of crossovers using `MultiCrossOver`.
+Each crossover has its own probability (in [0 ; 1]) of being applied.
+
 Note that all (or none) crossover may be applied depending on the probability rates defined.
 
 ```go
@@ -124,7 +130,7 @@ mutation               | description | parameters
 `UniformMutation`      | Random mutation of bits (each bit has 50% chance to be changed)
 `SwapPermutation`      | Random swap of 2 bits
 `InversionPermutation` | Randomly picks 2 points and inverts the subtour (eg.: `AB.CDEF.GH` will become `AB.FEDC.GH`)
-`SramblePermutation`   | Randomly picks 2 points and shuffles the subtour (eg.: `AB.CDEF.GH` will become `AB.ECFD.GH`)
+`ScramblePermutation`  | Randomly picks 2 points and shuffles the subtour (eg.: `AB.CDEF.GH` will become `AB.ECFD.GH`)
 `MultiMutation`        | Configure a set of different mutations (see below)
 
 ```go
@@ -136,9 +142,6 @@ It is also possible to apply an **ordered** list of mutations using `MultiMutati
 Each mutation has its own probability (in [0 ; 1]) of being applied.
 
 All mutations are triggered one by one, so, if probabilities are too small, it may possible to have no mutation applied and the unchanged individuals will be part of the next generation.
-
-* `0`: the mutation will **never** be applied
-* `1`: the mutation will **always** be applied
 
 ```go
 // New multi mutation
@@ -165,6 +168,10 @@ survivor := operator.EliteSurvivor{}
 ```
 
 Call `Use` to apply an **ordered** list of surviving actions, closing with `Otherwise`.
+Each survivor method has its own probability (in [0 ; 1]) of being applied.
+
+All methods are triggered one by one: if the first surviving method is not chosen, try the second one and so on.
+If no method has been chosen, the default one is used.
 
 ```go
 // New multi surviving operator
@@ -214,7 +221,7 @@ This example defines minimalistic operators for an engine, without the custom ac
 
 ```go
 eng := engine.Engine{
-  Initializer: nil,                                        // Use default random initializer with max value = 1
+  Initializer: gene.RandomInitializer{MaxValue: 1},        // Simple initializer with max value = 1
   Selection:   operator.RouletteSelection{},               // Simple selection
   CrossOver:   operator.UniformCrossOver{},                // Simple crossover
   Survivor:    operator.EliteSurvivor{},                   // Simple survivor
@@ -228,7 +235,7 @@ This example defines all multi operators with a custom user action.
 
 ```go
 eng := engine.Engine{
-  Initializer: operator.NewRandomInitializer(1), // Use default random initializer with max value = 1
+  Initializer: gene.RandomInitializer{MaxValue: 1}, // Use default random initializer with max value = 1
   Selection: operator.MultiSelection{}.
     Use(0.5, operator.RouletteSelection{}).               // 50% chance to use roulette selection
     Otherwise(operator.TournamentSelection{Fighters: 3}), // Otherwise, use tournament selection with 3 fighters

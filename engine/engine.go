@@ -146,7 +146,10 @@ func (eng Engine) nextGeneration(parents gene.Population) (gene.Population, erro
 }
 
 func (eng Engine) check() error {
+	// Check presence
 	switch {
+	case eng.Initializer == nil:
+		return errors.New("initializer must be set")
 	case eng.Selection == nil:
 		return errors.New("selection must be set")
 	case eng.CrossOver == nil:
