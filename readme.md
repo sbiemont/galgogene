@@ -27,12 +27,12 @@ Before creating an engine, operators have to be defined:
 
 operator | description
 -------- | -----------
-[Initializer](#initializer-operator)      | initializes a new set of bits for a new  individual
-[Selection](#selection-operator)      | selection method to fetch one individual from the population
-[CrossOver](#crossover-operator)      | crossover method applied on the chosen individuals
-[Mutation](#mutation-operator)      | mutation method applied after crossover
-[Survivor](#survivor-operator)      | mutated individuals are added of the new pool, only select some "survivors"
-[Termination](#termination-operator)      | ending conditions
+[Initializer](#initializer-operator) | initializes a new set of bits for a new  individual
+[Selection](#selection-operator)     | selection method to fetch one individual from the population
+[CrossOver](#crossover-operator)     | crossover method applied on the chosen individuals
+[Mutation](#mutation-operator)       | mutation method applied after crossover
+[Survivor](#survivor-operator)       | mutated individuals are added of the new pool, only select some "survivors"
+[Termination](#termination-operator) | ending conditions
 
 **Note** that some operators are **incompatible** with each others.
 Use a [factory](#engine-with-a-factory) to ensure that the right operators are instanciated.
