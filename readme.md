@@ -264,6 +264,28 @@ eng := engine.Engine{
 }
 ```
 
+### Engine with a factory
+
+Permutations and random values cannot be used in the same engine.
+Use a `Permutation` or a `Random` factory to select only methods for the chosen strategy.
+
+```go
+f := factory.Permutation{} // Choose the factory
+
+eng := engine.Engine{
+  Initializer: f.Initializer.Permutation(), // Init all operators using it
+  Selection: f.Selection.Multi().
+    Use(0.01, f.Selection.Elite()).
+    Otherwise(f.Selection.Roulette()),
+  CrossOver: f.CrossOver.UniformOrder(),
+  Mutation:  f.Mutation.Scramble(),
+  Survivor:  f.Survivor.Rank(),
+  Termination: f.Termination.Multi().
+    Use(f.Termination.Generation(1000)).
+    Use(f.Termination.Duration(5 * time.Second)),
+}
+```
+
 ### Run the engine
 
 Launch processing using `Run`.
