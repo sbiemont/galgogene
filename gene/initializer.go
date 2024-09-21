@@ -1,44 +1,37 @@
 package gene
 
 import (
-	"errors"
-	"math"
+	"fmt"
 
 	"github.com/sbiemont/galgogene/random"
 )
 
 // Initializer is in charge of the individuals code initialization
 type Initializer interface {
-	// Check if parameters are valid
-	Check(bitsSize int) error
-
 	// Init the individual code using the input parameters
-	Init(bitsSize int) Bits
+	Init(chrmSize int) (Chromosome, error)
 }
 
 // ------------------------------
 
-// RandomInitializer is a full random bits initializer
+// RandomInitializer is a full random chromosome initializer
 type RandomInitializer struct {
-	MaxValue uint8
+	MaxValue B
 }
 
 // NewRandomInitializer builds a new instance
-func NewRandomInitializer(maxValue uint8) RandomInitializer {
+func NewRandomInitializer(maxValue B) RandomInitializer {
 	return RandomInitializer{
 		MaxValue: maxValue,
 	}
 }
 
-func (izr RandomInitializer) Check(_ int) error {
+func (izr RandomInitializer) Init(chrmSize int) (Chromosome, error) {
 	if izr.MaxValue == 0 {
-		return errors.New("initializer max value cannot be 0")
+		return Chromosome{}, fmt.Errorf("initializer max value cannot be 0")
 	}
-	return nil
-}
 
-func (izr RandomInitializer) Init(bitsSize int) Bits {
-	return NewBitsRandom(bitsSize, izr.MaxValue)
+	return NewChromosomeRandom(chrmSize, izr.MaxValue), nil
 }
 
 // ------------------------------
@@ -46,17 +39,14 @@ func (izr RandomInitializer) Init(bitsSize int) Bits {
 // PermutationInitializer builds a list of shuffled permutations
 type PermutationInitializer struct{}
 
-func (PermutationInitializer) Check(bitsSize int) error {
-	if bitsSize > math.MaxUint8 {
-		return errors.New("bitsSize too big")
+func (PermutationInitializer) Init(chrmSize int) (Chromosome, error) {
+	if chrmSize == 0 {
+		return Chromosome{}, fmt.Errorf("chrmSize cannot be 0")
 	}
-	return nil
-}
 
-func (PermutationInitializer) Init(bitsSize int) Bits {
-	result := NewBits(bitsSize, uint8(bitsSize))
-	for i, value := range random.Perm(bitsSize) {
-		result.Raw[i] = uint8(value)
+	result := NewChromosome(chrmSize, B(chrmSize))
+	for i, value := range random.Perm(chrmSize) {
+		result.Raw[i] = B(value)
 	}
-	return result
+	return result, nil
 }

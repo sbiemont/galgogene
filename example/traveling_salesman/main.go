@@ -34,7 +34,7 @@ var coordinates = [][2]float64{
 // distances is a small cache for cities distances
 var distances = make(map[string]float64)
 
-func dist(cityA, cityB uint8) float64 {
+func dist(cityA, cityB gene.B) float64 {
 	key := fmt.Sprintf("%d-%d", cityA, cityB)
 	if d, ok := distances[key]; ok {
 		return d
@@ -50,10 +50,10 @@ func dist(cityA, cityB uint8) float64 {
 	return d
 }
 
-type cities []uint8
+type cities []gene.B
 
-func newCities(bits gene.Bits) cities {
-	return cities(bits.Raw)
+func newCities(chrm gene.Chromosome) cities {
+	return cities(chrm.Raw)
 }
 
 func (cts cities) String() string {
@@ -64,14 +64,16 @@ func (cts cities) String() string {
 	return "[" + strings.Join(result, ", ") + "]"
 }
 
+// Compute distances [A, B, C, D]
+// dist = A->B + B->C + C->D + D->A
 func (cts cities) Distance() float64 {
 	var distance float64
-	var cityA uint8 = cts[0]
+	var cityA gene.B = cts[0]
 	for _, cityB := range cts[1:] {
 		distance += dist(cityA, cityB)
 		cityA = cityB
 	}
-	return distance
+	return distance + dist(cityA, cts[0])
 }
 
 func (cts cities) Fitness() float64 {
@@ -97,13 +99,15 @@ func main() {
 			Use(0.05, operator.SwapPermutation{}).
 			Use(0.05, operator.ScramblePermutation{}),
 		Survivor: operator.MultiSurvivor{}.
-			Use(0.2, operator.RankSurvivor{}).
 			Use(0.6, operator.EliteSurvivor{}).
-			Otherwise(operator.ChildrenSurvivor{}),
+			Otherwise(operator.RandomSurvivor{}),
 		Termination: operator.MultiTermination{}.
 			Use(&operator.GenerationTermination{K: 1000}).
 			Use(&operator.ImprovementTermination{K: 10}).
 			Use(&operator.DurationTermination{Duration: 5 * time.Second}),
+		Fitness: func(chrm gene.Chromosome) float64 {
+			return newCities(chrm).Fitness()
+		},
 		OnNewGeneration: func(pop gene.Population) {
 			elite := newCities(pop.Elite().Code)
 			fmt.Printf(
@@ -120,9 +124,7 @@ func main() {
 
 	// Run the engine
 	nbCities := len(coordinates)
-	solution, err := eng.Run(popSize, nbCities, func(bits gene.Bits) float64 {
-		return newCities(bits).Fitness()
-	})
+	solution, err := eng.Run(popSize, popSize*2, nbCities)
 	if err != nil {
 		panic(err)
 	}

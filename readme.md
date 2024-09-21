@@ -7,19 +7,18 @@ Galgogene is a simple implementation of a [genetic algorithm](https://en.wikiped
 Check the [examples](https://github.com/sbiemont/galgogene/tree/master/example), and run them:
 
 ```shell
-# Find a simple input string using a minimalistic engine
-go run example/simple_string_matcher/main.go
-
-# Find a more complex string using a custom engine
-go run example/multi_string_matcher/main.go
-
-# Find the solution of the traveling salesman problem (with ~30 cities)
-go run example/traveling_salesman/main.go
+make example1 # Find a simple input string using a minimalistic engine
+make example2 # Find a more complex string using a custom engine
+make example3 # Find a solution to the traveling salesman problem (with ~30 cities)
 ```
 
 These examples may not find the best solution. Your turn to customise them !
 
 See [annex](#annex) for general information about the main algorithm.
+
+## Roadmap
+
+- [ ] improve PMX to be used with duplicated values
 
 ## The operators
 
@@ -27,28 +26,35 @@ Before creating an engine, operators have to be defined:
 
 operator | description
 -------- | -----------
-[Initializer](#initializer-operator) | initializes a new set of bits for a new  individual
+[Initializer](#initializer-operator) | initializes a new chromosome to create a new individual
 [Selection](#selection-operator)     | selection method to fetch one individual from the population
 [CrossOver](#crossover-operator)     | crossover method applied on the chosen individuals
 [Mutation](#mutation-operator)       | mutation method applied after crossover
 [Survivor](#survivor-operator)       | mutated individuals are added of the new pool, only select some "survivors"
 [Termination](#termination-operator) | ending conditions
+[Fitness](#fitness-function)         | core fitness function
 
 **Note** that some operators are **incompatible** with each others.
 Use a [factory](#engine-with-a-factory) to ensure that the right operators are instanciated.
 
 ### Initializer operator
 
-Initializes a set of bits for a new individual (during initialization step)
+Create an initializer that defines the rules to build a chromosome of a given size.
 
 initializer              | description | parameters
 ------------------------ | ----------- | ----------
-`RandomInitializer`      | Builds a list of full random bits | `MaxValue`: the maximum value to be stored
-`PermutationInitializer` | Builds a list of shuffled indexes in [0 ; bits length[
+`RandomInitializer`      | Builds a chromosome of a given size with random values in [0 ; MaxValue[ | `MaxValue`: the maximum value to be stored
+`PermutationInitializer` | Builds a chromosome of shuffled indexes in [0 ; size[
 
 ```go
-// New random initializer with max value = 1
+// New random initializer to create chromosomes with 0 and 1
 init := gene.RandomInitializer{MaxValue: 1}
+```
+
+To create a custom `Initializer`, implement this function to match the interface:
+
+```go
+func Init(chrmSize int) (Chromosome, error) { ... }
 ```
 
 ### Selection operator
@@ -58,7 +64,7 @@ This operator is used to select an individual from the population, each time the
 selection             | description | parameters
 --------------------- | ----------- | ----------
 `RouletteSelection`   | Fitness proportionate selection
-`TournamentSelection` | Select *K* fighters and keep the best one | `Fighters`: number of fighters in a tournament
+`TournamentSelection` | Select $K$ fighters and keep the best one | `Fighters`: number of fighters in a tournament
 `EliteSelection`      | Select the best individual of the current population
 `MultiSelection`      | Configure a set of different selections (see below)
 
@@ -77,7 +83,14 @@ For example, create a `MultiSelection`, call `Use` to stack selections and close
 // New multi selection
 selection := operator.MultiSelection{}.
   Use(0.5, operator.RouletteSelection{}).              // 50% chance to use wheel roulette selection
+  Use(0.1, operator.EliteSelection{}).                 // 10% chance to use the elite selection
   Otherwise(operator.TournamentSelection{Fighters: 3}) // Otherwise, use tournament selection
+```
+
+To create a custom `Selection`, implement this function to match the interface:
+
+```go
+func Select(pop gene.Population) (gene.Individual, error) { ... }
 ```
 
 ### Crossover operator
@@ -87,16 +100,17 @@ Once individuals have been chosen, apply a crossover on pairs of individuals to 
 Notes:
 
 * standard crossovers will mix values from both parents to create 2 new children
-* permutation crossovers will reorder values without changing them
+* permutation crossovers will reorder the values without changing them (some permutation may crash if duplicated values are found)
 
-crossover               | description | parameters
------------------------ | ----------- | ----------
-`OnePointCrossOver`     | Crossover with 1 randomly chosen point
-`TwoPointsCrossOver`    | Crossover with 2 randomly chosen points
-`UniformCrossOver`      | Bit by bit crossover (with an equal probability of beeing chosen)
-`DavisOrderCrossOver`   | Davis' order crossover (PX0), **permutation** that reorder the list of values
-`UniformOrderCrossOver` | Uniform order crossover (PX1), **permutation** that reorder the list of values
-`MultiCrossOver`        | Configure a set of different crossovers (see below)
+crossover                 | description | parameters
+------------------------- | ----------- | ----------
+`OnePointCrossOver`       | Crossover with 1 randomly chosen point
+`TwoPointsCrossOver`      | Crossover with 2 randomly chosen points
+`UniformCrossOver`        | Bit by bit crossover (with an equal probability of beeing chosen)
+`DavisOrderCrossOver`     | Davis' order crossover (PX0), **permutation** that reorder the list of values
+`UniformOrderCrossOver`   | Uniform order crossover (PX1), **permutation** that reorder the list of values
+`PartiallyMatchCrossOver` | Partially matched/mapped crossover (PMX), **permutation** that reorder the list of values<br>Note that duplicated values in the chromosome cannot be used and may lead to a crash (infinite loop)
+`MultiCrossOver`          | Configure a set of different crossovers (see below)
 
 ```go
 // New simple crossover
@@ -107,28 +121,36 @@ It is also possible to apply an **ordered** list of crossovers using `MultiCross
 Each crossover has its own probability (in [0 ; 1]) of being applied.
 
 Note that all (or none) crossover may be applied depending on the probability rates defined.
+By default, only one crossover is applied (the first to be triggered).
+If you need to run through all crossovers, set the `ApplyAll` parameter to `true`.
 
 ```go
 // New multi crossover
-crossover := operator.MultiCrossOver{}.
+crossover := operator.MultiCrossOver{ApplyAll: true}.
   Use(0.05, operator.UniformCrossOver{}). // 5% chance for the uniform crossover to happen
   Use(0.75, operator.OnePointCrossOver{}) // 75% chance for the one-point crossover to happen
 ```
 
+To create a custom `CrossOver`, implement this function to match the interface:
+
+```go
+func Mate(chrm1, chrm2 gene.Chromosome) (gene.Chromosome, gene.Chromosome) { ... }
+```
+
 ### Mutation operator
 
-Once crossover(s) have been applied, apply a mutation like a simple random bits change.
+Once crossover(s) have been applied, apply a mutation on the chromosome of the newly created individuals.
 
 Notes:
 
-* a **mutation** overrides some bits with new random values
-* a **permutation** randomly reorders some bits (without changing the values)
+* a **mutation** overrides some bases with new random values
+* a **permutation** randomly reorders some bases (without changing the values)
 
 mutation               | description | parameters
 ---------------------- | ----------- | ----------
-`UniqueMutation`       | Randomly choose one unique bit and change its value
-`UniformMutation`      | Random mutation of bits (each bit has 50% chance to be changed)
-`SwapPermutation`      | Random swap of 2 bits
+`UniqueMutation`       | Randomly choose one unique base and change its value
+`UniformMutation`      | Random mutation of bases (each base has 50% chance to be changed)
+`SwapPermutation`      | Random swap of 2 bases
 `InversionPermutation` | Randomly picks 2 points and inverts the subtour (eg.: `AB.CDEF.GH` will become `AB.FEDC.GH`)
 `ScramblePermutation`  | Randomly picks 2 points and shuffles the subtour (eg.: `AB.CDEF.GH` will become `AB.ECFD.GH`)
 `MultiMutation`        | Configure a set of different mutations (see below)
@@ -141,25 +163,33 @@ mutation := operator.UniformMutation{}
 It is also possible to apply an **ordered** list of mutations using `MultiMutation`.
 Each mutation has its own probability (in [0 ; 1]) of being applied.
 
-All mutations are triggered one by one, so, if probabilities are too small, it may possible to have no mutation applied and the unchanged individuals will be part of the next generation.
+All mutations are triggered one by one, so, if probabilities are too small, it may be possible to have no mutation applied and the unchanged individuals will be part of the offspring population.
+By default, only one mutation is applied (the first one to be triggered).
+If you need to run through all mutations, set the `ApplyAll` parameter to `true`.
 
 ```go
 // New multi mutation
-mutation := operator.MultiMutation{}.
+mutation := operator.MultiMutation{ApplyAll: true}.
   Use(0.01, operator.UniformMutation{}). // 1% chance for the mutation to happen
   Use(0.05, operator.UniqueMutation{})   // 5% chance for the mutation to happen
 ```
 
+To create a custom `Mutation`, implement this function to match the interface:
+
+```go
+func Mutate(chrm gene.Chromosome) gene.Chromosome { ... }
+```
+
 ### Survivor operator
 
-Once chosen individuals have been mutated, they are injected in the next generation population.
-It is now time to select individuals from this new generation.
+Once chosen individuals have been mutated, they are injected in the offspring population.
+It is now time to select individuals to create a new generation.
 
 survivor           | description | parameters
 ------------------ | ----------- | ----------
-`EliteSurvivor`    | Select the elite from the surviving population
-`RankSurvivor`     | Select the individual with the smallest ranks
-`ChildrenSurvivor` | Keep the children in the new generation (limited to the parent pool size)
+`EliteSurvivor`    | Select the elites in the parent and offspring population
+`RankSurvivor`     | Select the individuals with the smallest ranks (newest individuals)
+`RandomSurvivor`   | Select random survivors in the parent and offspring population (it may lead to problems of convergence)
 `MultiSurvivor`    | Configure a set of different surviving behaviors (see below)
 
 ```go
@@ -176,18 +206,24 @@ If no method has been chosen, the default one is used.
 ```go
 // New multi surviving operator
 survivor := operator.MultiSurvivor{}.
-  Use(0.75, operator.EliteSurvivor{}).    // 75% chance to keep the best individuals in the new generation
-  Use(0.25, operator.RankSurvivor{}).     // Or, 25% chance to keep the least ranked individuals in the new generation
-  Otherwise(operator.ChildrenSurvivor{})  // Otherwise, keep new generated children
+  Use(0.75, operator.EliteSurvivor{}). // 75% chance to keep the best individuals in the new generation
+  Use(0.25, operator.RankSurvivor{}).  // Or, 25% chance to keep the least ranked individuals in the new generation
+  Otherwise(operator.RandomSurvivor{}) // Otherwise, select random individuals
+```
+
+To create a custom `Survivor`, implement this function to match the interface:
+
+```go
+func Survive(parents gene.Population, offsprings gene.Population) gene.Population
 ```
 
 ### Termination operator
 
-Define an ending operator that check if processing can be stopped.
+Define an ending operator that checks if processing can be stopped.
 
 termination              | description | parameters
 ------------------------ | ----------- | ----------
-`GenerationTermination`  | Processing will end when the *K*<sup>th</sup> generation is reached | `K`: max generation to be reached
+`GenerationTermination`  | Processing will end when the $K^{th}$ generation is reached | `K`: max generation to be reached
 `ImprovementTermination` | Processing will end when the total fitness has not increased since the previous generation | `K`: the number of generations that the improvement has to remain steady (default: 1)
 `FitnessTermination`     | Processing will end when the elite reaches the defined fitness | `Fitness`: min fitness
 `DurationTermination`    | Processing will end when the total duration of each generation reaches a maximum | `Duration`: max duration
@@ -208,6 +244,33 @@ termination := operator.MultiTermination{}.
   Use(&operator.DurationTermination{Duration: 10 * time.Second}) // Check that the sum of computation time of each generation is limited to 10s
 ```
 
+To create a custom `Termination`, implement this function to match the interface:
+
+```go
+func End(pop gene.Population) Termination { ... }
+```
+
+### Fitness function
+
+The fitness function is used to evaluate an individual.
+Its result has to **increase** with the fact that the individual is **fitted** for the current problem.
+If the solution is to minimise $x$, inverse it to maximise the fitness ($fitness=1/x$)
+
+For example, a pure custom function could be:
+
+```go
+// maximize the number of '42' in the chromosome
+var fitness gene.Fitness = func(chrm gene.Chromosome) float64 {
+  var fit float64
+  for _, it := range chrm.Raw {
+    if it == 42 {
+      fit += 1
+    }
+  }
+  return fit / float64(chrm.Len()) // optional: normalize the result
+}
+```
+
 ## The engine
 
 An engine combines:
@@ -221,11 +284,12 @@ This example defines minimalistic operators for an engine, without the custom ac
 
 ```go
 eng := engine.Engine{
-  Initializer: gene.RandomInitializer{MaxValue: 1},        // Simple initializer with max value = 1
-  Selection:   operator.RouletteSelection{},               // Simple selection
-  CrossOver:   operator.UniformCrossOver{},                // Simple crossover
-  Survivor:    operator.EliteSurvivor{},                   // Simple survivor
-  Termination: &operator.FitnessTermination{Fitness: 1.0}, // Simple termination condition
+  Initializer: gene.RandomInitializer{MaxValue: 1},          // Simple initializer with max value = 1
+  Selection:   operator.RouletteSelection{},                 // Simple selection
+  CrossOver:   operator.UniformCrossOver{},                  // Simple crossover
+  Survivor:    operator.EliteSurvivor{},                     // Simple survivor
+  Termination: &operator.FitnessTermination{Fitness: 1.0},   // Simple termination condition
+  Fitness:     func(_ gene.Chromosome) float64 { return 0 }, // Fitness function to be defined
 }
 ```
 
@@ -240,17 +304,18 @@ eng := engine.Engine{
     Use(0.5, operator.RouletteSelection{}).               // 50% chance to use roulette selection
     Otherwise(operator.TournamentSelection{Fighters: 3}), // Otherwise, use tournament selection with 3 fighters
   CrossOver: operator.MultiCrossOver{}.
-    Use(1, operator.UniformCrossOver{}),  // 100% chance to apply uniform crossover
+    Use(1, operator.UniformCrossOver{}), // 100% chance to apply uniform crossover
   Mutation: operator.MultiMutation{}.
     Use(0.1, operator.UniformMutation{}), // 10% chance to apply a mution, each bit has 50% chance to be changed
   Survivor: operator.MultiSurvivor{}.
-    Use(0.1, operator.RankSurvivor{}).    // 10% to use the ranking selection
-    Otherwise(operator.EliteSurvivor{}),  // Otherwise, only keep best individuals to create the new population
+    Use(0.1, operator.RankSurvivor{}).   // 10% to use the ranking selection
+    Otherwise(operator.EliteSurvivor{}), // Otherwise, only keep best individuals to create the new population
   Termination: operator.MultiTermination{}.
     Use(&operator.GenerationTermination{K: 50}).               // Stop at generation #50
     Use(&operator.ImprovementTermination{}).                   // Or stop if total fitness has not been improved
     Use(&operator.FitnessTermination{Fitness: 1}).             // Or stop if Fitness=1 is reached
     Use(&operator.DurationTermination{Duration: time.Second}), // Or stop if total computation time of generations has reached 1s
+  Fitness: func(_ gene.Chromosome) float64 { return 0 }, // Fitness function to be defined
   OnNewGeneration: func(pop gene.Population) { // OnNewGeneration is called each time a new generation is produced
     elite := pop.Elite()
     fmt.Printf(
@@ -258,7 +323,7 @@ eng := engine.Engine{
       pop.Stats.GenerationNb,
       elite.Fitness,
       pop.Stats.TotalFitness,
-      string(elite.Code.ToBytes()),
+      string(elite.Code.Raw),
     )
   },
 }
@@ -283,20 +348,19 @@ eng := engine.Engine{
   Termination: f.Termination.Multi().
     Use(f.Termination.Generation(1000)).
     Use(f.Termination.Duration(5 * time.Second)),
+  Fitness: func(_ gene.Chromosome) float64 { return 0 },
 }
 ```
 
 ### Run the engine
 
-Launch processing using `Run`.
+Launch processing using `Run` with these nput parameters:
 
-Input parameters required:
-
-parameter  | definition
----------- | ----------
-`popSize`  | The number of individuals in each generation
-`bitsSize` | The number of bits for each individual
-`fitness`  | The fitness method used to evaluate an individual<br>The result has to **increase** with the fact that the individual is **fitted** for the current problem<br>If the solution is to minimise $x$, inverse it to compute maximise the fitness ($fitness=1/x$)
+parameter        | definition
+---------------- | ----------
+`popSize`        | The number of individuals in each generation
+`offspringSize`  | The number of individuals in the offspring population<br>Note: if the `offspringSize` < `popSize`, each generated population will still have `popSize` individuals in it
+`chromosomeSize` | Number of bases in a chromosome (in one individual)
 
 It will return a `Solution` (and an error if any):
 
@@ -307,15 +371,11 @@ parameter      | definition
 `Termination`             | The ending condition raised
 
 ```go
-popSize := 100 // nb of individuals in init population
-bitsSize := 20 // nb of bits for each individual
-var fitness gene.FitnessFct = func(bits gene.Bits) float64 {
-  // custom fitness function of a code of `bitsSize` bits
-  return 1
-}
-
 // Run the engine
-solution, err := eng.Run(popSize, bitsSize, fitness)
+popSize := 100
+offspringSize := 50
+chromosomeSize = 10
+solution, err := eng.Run(popSize, offspringSize, chromosomeSize)
 ```
 
 ## Annex
@@ -346,18 +406,19 @@ The full process:
 ```mermaid
 graph LR
   init(Init)
-  survive(Surviors)
+  pool(New pool)
+  termination(End?)
+  start(Current population)
+  survive(Survivors)
   select(Selection)
   crossover(CrossOver)
   mutate(Mutation)
-  pool(New pool)
-  termination(End?)
-  start(Input population)
 
   init --> start
   start --> select --> crossover --> mutate -->|add| pool
   pool -->|continue| start
-  pool -->|done| survive --> termination
+  pool -->|offspring| survive --> termination
+  start -->|parents| survive
   termination -->|yes| done(Done)
-  termination -->|use survivals as<br>input generation| start
+  termination -->|use survivors as<br>current population| start
 ```

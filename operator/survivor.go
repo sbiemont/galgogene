@@ -1,8 +1,6 @@
 package operator
 
 import (
-	"errors"
-
 	"github.com/sbiemont/galgogene/gene"
 	"github.com/sbiemont/galgogene/random"
 )
@@ -10,7 +8,14 @@ import (
 // Survivor defines an action to be applied on the current generation
 type Survivor interface {
 	// Survive allow to choose some individual from the parents population and/or update the survivors
-	Survive(parents gene.Population, survivors *gene.Population) error
+	Survive(parents gene.Population, offsprings gene.Population) gene.Population
+}
+
+// mergePopulations creates a new population with all individuals of both populations but no stats
+func mergePopulations(pop1, pop2 gene.Population) gene.Population {
+	return gene.Population{
+		Individuals: append(pop1.Individuals, pop2.Individuals...),
+	}
 }
 
 // ------------------------------
@@ -18,11 +23,10 @@ type Survivor interface {
 // EliteSurvivor selects the elite from the parents + children population
 type EliteSurvivor struct{}
 
-func (svr EliteSurvivor) Survive(parents gene.Population, survivors *gene.Population) error {
-	survivors.Individuals = append(survivors.Individuals, parents.Individuals...)
+func (svr EliteSurvivor) Survive(parents gene.Population, offsprings gene.Population) gene.Population {
+	survivors := mergePopulations(parents, offsprings)
 	survivors.SortByFitness()
-	survivors.Individuals = (*survivors).First(parents.Len()).Individuals
-	return nil
+	return survivors.First(parents.Len())
 }
 
 // ------------------------------
@@ -30,21 +34,21 @@ func (svr EliteSurvivor) Survive(parents gene.Population, survivors *gene.Popula
 // RankSurvivor selects the newer individuals from the parents + children population
 type RankSurvivor struct{}
 
-func (svr RankSurvivor) Survive(parents gene.Population, survivors *gene.Population) error {
-	survivors.Individuals = append(survivors.Individuals, parents.Individuals...)
+func (svr RankSurvivor) Survive(parents gene.Population, offsprings gene.Population) gene.Population {
+	survivors := mergePopulations(parents, offsprings)
 	survivors.SortByRank()
-	survivors.Individuals = (*survivors).First(parents.Len()).Individuals
-	return nil
+	return survivors.First(parents.Len())
 }
 
 // ------------------------------
 
-// ChildrenSurvivor only let the children population survive
-type ChildrenSurvivor struct{}
+// RandomSurvivor selects purely random survivors in the parents + children population
+type RandomSurvivor struct{}
 
-func (svr ChildrenSurvivor) Survive(parents gene.Population, survivors *gene.Population) error {
-	survivors.Individuals = (*survivors).First(parents.Len()).Individuals
-	return nil
+func (svr RandomSurvivor) Survive(parents gene.Population, offsprings gene.Population) gene.Population {
+	survivors := mergePopulations(parents, offsprings)
+	survivors.Shuffle()
+	return survivors.First(parents.Len())
 }
 
 // ------------------------------
@@ -59,11 +63,10 @@ type MultiSurvivor []probaSurvivor
 
 // Use the given probabilistic survivor
 func (svr MultiSurvivor) Use(rate float64, survivor Survivor) MultiSurvivor {
-	svr = append(svr, probaSurvivor{
+	return append(svr, probaSurvivor{
 		rate:     rate,
 		survivor: survivor,
 	})
-	return svr
 }
 
 // Otherwise defines the survivor to be used if no survivor have been picked
@@ -80,20 +83,15 @@ type multiSurvivor struct {
 	deflt     Survivor
 }
 
-// Survive applies one of the defined surviors 
-func (svr multiSurvivor) Survive(parents gene.Population, survivors *gene.Population) error {
-	// Check
-	if svr.deflt == nil {
-		return errors.New("no default survivor defined")
-	}
-
+// Survive applies one of the defined surviors
+func (svr multiSurvivor) Survive(parents gene.Population, offsprings gene.Population) gene.Population {
 	// Run first survivor
 	for _, proba := range svr.survivors {
 		if random.Peek(proba.rate) {
-			return proba.survivor.Survive(parents, survivors)
+			return proba.survivor.Survive(parents, offsprings)
 		}
 	}
 
 	// Otherwise, use default survivor
-	return svr.deflt.Survive(parents, survivors)
+	return svr.deflt.Survive(parents, offsprings)
 }

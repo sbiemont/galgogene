@@ -8,9 +8,6 @@ import (
 	"github.com/sbiemont/galgogene/operator"
 )
 
-// Number of parallel go-routines for computations
-const nbGoRoutines int = 4
-
 // Engine is the core element for running the algorithm
 type Engine struct {
 	Initializer     gene.Initializer
@@ -19,45 +16,87 @@ type Engine struct {
 	Mutation        operator.Mutation
 	Survivor        operator.Survivor
 	Termination     operator.Termination
+	Fitness         gene.Fitness
 	OnNewGeneration func(gene.Population)
 }
 
-// Solution after running the engine
-// * best population (with elite individual)
-// * best population (with max total fitness)
-// * termination operator triggered
-// * error (if any)
-type Solution struct {
-	PopWithBestIndividual   gene.Population      // Population with best computed individual
-	PopWithBestTotalFitness gene.Population      // Population with best total fitness computed
-	Termination             operator.Termination // Termination that triggered the end of computation
+func (eng Engine) check() error {
+	// Check presence
+	switch {
+	case eng.Fitness == nil:
+		return errors.New("fitness must be set")
+	case eng.Initializer == nil:
+		return errors.New("initializer must be set")
+	case eng.Selection == nil:
+		return errors.New("selection must be set")
+	case eng.CrossOver == nil:
+		return errors.New("crossover must be set")
+	case eng.Survivor == nil:
+		return errors.New("survivor must be set")
+	case eng.Termination == nil:
+		return errors.New("termination must be set")
+	default:
+		return nil
+	}
 }
 
 // Run the engine
-// * popSize: the number of individuals in a population
-// * bitsSize: number of bits in a gene (in one individual)
-// * fitness: the function that computes the gene's score
-func (eng Engine) Run(popSize, bitsSize int, fitness gene.FitnessFct) (Solution, error) {
+// * popSize:        the number of individuals in a population
+// * offspringSize:  the number of individuals in the offspring population
+// * chromosomeSize: number of bases in a chromosome (in one individual)
+func (eng Engine) Run(popSize, offspringSize, chromosomeSize int) (Solution, error) {
+	start := time.Now()
 	if err := eng.check(); err != nil {
 		return Solution{}, err
 	}
 
-	// Init new pop
-	population := gene.NewPopulation(popSize, fitness, eng.Initializer)
-	withBestIndividual := population
-	withBestTotalFit := population
-	errInit := population.Init(bitsSize)
+	// Init population size
+	makeEven := func(v int) int {
+		return v + v%2
+	}
+	if popSize <= 0 {
+		popSize = 2
+	}
+	if offspringSize <= 0 {
+		offspringSize = popSize
+	}
+	popSize = makeEven(popSize)
+	offspringSize = makeEven(offspringSize)
+
+	// Init first pop
+	population := gene.NewPopulation(popSize)
+	errInit := population.Init(chromosomeSize, eng.Initializer, eng.Fitness)
 	if errInit != nil {
 		return Solution{}, errInit
 	}
+	withBestIndividual := population
+	withBestTotalFit := population
 	eng.onNewGeneration(population)
+
+	// Init channels
+	chPopulation := make(chan gene.Population, 1)
+	chSelection := make(chan gene.Chromosome, 20)
+	chCrossover := make(chan gene.Chromosome, 20)
+	chMutation := make(chan gene.Chromosome, 20)
+	chIndividuals := make(chan gene.Individual, 20)
+	chErr := make(chan error)
+	go eng.selection(offspringSize, chPopulation, chSelection, chErr)
+	go eng.crossover(chSelection, chCrossover)
+	go eng.mutation(chCrossover, chMutation)
+	go eng.fitness(chMutation, chIndividuals)
+	defer close(chErr)
+	defer close(chIndividuals)
+	defer close(chMutation)
+	defer close(chCrossover)
+	defer close(chSelection)
+	defer close(chPopulation)
 
 	// Run until an ending condition is found
 	var termination operator.Termination
 	for ; termination == nil; termination = eng.Termination.End(population) {
-		// New generation
+		chPopulation <- population // start selection process
 		var err error
-		population, err = eng.nextGeneration(population)
+		population, err = eng.nextGeneration(start, population, offspringSize, chIndividuals, chErr)
 		if err != nil {
 			return Solution{}, err
 		}
@@ -87,78 +126,75 @@ func (eng Engine) onNewGeneration(population gene.Population) {
 }
 
 // nextGeneration builds a new generation of individuals
-func (eng Engine) nextGeneration(parents gene.Population) (gene.Population, error) {
-	start := time.Now()
-
+func (eng Engine) nextGeneration(
+	start time.Time,
+	parents gene.Population,
+	offspringSize int,
+	chIndividuals <-chan gene.Individual,
+	chErr <-chan error,
+) (gene.Population, error) {
 	// Init
-	popSize := len(parents.Individuals)
-	newPop := gene.NewPopulationFrom(2*popSize, parents)
-
-	err := runParallelBatch(popSize, nbGoRoutines, func(from, to, _ int) error {
-		for i := from; i < to; i++ {
-			// Select 2 individuals
-			ind1, err1 := eng.Selection.Select(parents)
-			if err1 != nil {
-				return err1
-			}
-			ind2, err2 := eng.Selection.Select(parents)
-			if err2 != nil {
-				return err2
-			}
-			mut1, mut2 := ind1.Code, ind2.Code
-
-			// Crossover
-			if eng.CrossOver != nil {
-				mut1, mut2 = eng.CrossOver.Mate(mut1, mut2)
-			}
-
-			// Mutation
-			if eng.Mutation != nil {
-				mut1 = eng.Mutation.Mutate(mut1)
-				mut2 = eng.Mutation.Mutate(mut2)
-			}
-
-			// Add new individuals to the new generation
-			newPop.Individuals[2*i] = gene.NewIndividual(mut1)
-			newPop.Individuals[2*i+1] = gene.NewIndividual(mut2)
+	offsprings := gene.NewPopulation(offspringSize)
+	for i := range offspringSize {
+		select {
+		case err := <-chErr:
+			return gene.Population{}, err
+		case ind := <-chIndividuals:
+			offsprings.Individuals[i] = ind
 		}
-		return nil
-	})
-	if err != nil {
-		return gene.Population{}, err
 	}
-
-	// Compute all fitnesses
-	newPop.ComputeFitness()
+	offsprings.ComputeTotalFitness()
 
 	// Survivors
-	err = eng.Survivor.Survive(parents, &newPop)
-	if err != nil {
-		return gene.Population{}, err
-	}
-
-	// Total fitness and additional data
+	// new population has changed, compute global data like total fitness
+	newPop := eng.Survivor.Survive(parents, offsprings)
 	newPop.ComputeTotalFitness()
-	newPop.AddRank()
+	newPop.ComputeRank()
 	newPop.Stats.GenerationNb = parents.Stats.GenerationNb + 1
-	newPop.Stats.TotalDuration = parents.Stats.TotalDuration + time.Since(start)
+	newPop.Stats.TotalDuration = time.Since(start)
 	return newPop, nil
 }
 
-func (eng Engine) check() error {
-	// Check presence
-	switch {
-	case eng.Initializer == nil:
-		return errors.New("initializer must be set")
-	case eng.Selection == nil:
-		return errors.New("selection must be set")
-	case eng.CrossOver == nil:
-		return errors.New("crossover must be set")
-	case eng.Survivor == nil:
-		return errors.New("survivor must be set")
-	case eng.Termination == nil:
-		return errors.New("termination must be set")
-	default:
-		return nil
+// selection process: generate 1 selection per individual in the original population
+func (eng Engine) selection(offspringSize int, in <-chan gene.Population, out chan<- gene.Chromosome, chErr chan<- error) {
+	for population := range in {
+		for range offspringSize {
+			ind, err := eng.Selection.Select(population)
+			if err != nil {
+				chErr <- err
+				return
+			}
+			out <- ind.Code
+		}
+	}
+}
+
+// crossover process: use 2 chromosomes and produce 2 new ones
+func (eng Engine) crossover(in <-chan gene.Chromosome, out chan<- gene.Chromosome) {
+	for chrm1 := range in {
+		chrm2 := <-in
+		if eng.CrossOver != nil {
+			chrm1, chrm2 = eng.CrossOver.Mate(chrm1, chrm2)
+		}
+		out <- chrm1
+		out <- chrm2
+	}
+}
+
+// mutation process: mutate all chromosomes using the defined mutation function
+func (eng Engine) mutation(in <-chan gene.Chromosome, out chan<- gene.Chromosome) {
+	for mut := range in {
+		if eng.Mutation != nil {
+			mut = eng.Mutation.Mutate(mut)
+		}
+		out <- mut
+	}
+}
+
+// fitness process: compute each individual fitness
+func (eng Engine) fitness(in <-chan gene.Chromosome, out chan<- gene.Individual) {
+	for chrm := range in {
+		fitness := eng.Fitness(chrm)
+		out <- gene.NewIndividual(chrm, fitness)
 	}
 }

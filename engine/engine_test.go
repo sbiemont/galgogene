@@ -8,10 +8,17 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestEngineCheck(t *testing.T) {
+func TestEngine(t *testing.T) {
 	Convey("check", t, func() {
-		Convey("when empty", func() {
-			So(Engine{}.check(), ShouldBeError, "initializer must be set")
+		Convey("when missing fitness", func() {
+			So(Engine{}.check(), ShouldBeError, "fitness must be set")
+		})
+
+		Convey("when missing initializer", func() {
+			eng := Engine{
+				Fitness: func(c gene.Chromosome) float64 { return 0 },
+			}
+			So(eng.check(), ShouldBeError, "initializer must be set")
 		})
 
 		Convey("when minimalist", func() {
@@ -19,8 +26,9 @@ func TestEngineCheck(t *testing.T) {
 				Initializer: gene.RandomInitializer{MaxValue: 1},
 				Selection:   operator.RouletteSelection{},
 				CrossOver:   operator.OnePointCrossOver{},
-				Survivor:    operator.ChildrenSurvivor{},
+				Survivor:    operator.RankSurvivor{},
 				Termination: &operator.DurationTermination{},
+				Fitness:     func(c gene.Chromosome) float64 { return 0 },
 			}
 			So(eng.check(), ShouldBeNil)
 		})

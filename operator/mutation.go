@@ -8,12 +8,12 @@ import (
 // Mutation examples:
 // https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_mutation.htm
 
-// Mutation defines a specific mutation on one set of bits and returns the mutated result
+// Mutation defines a specific mutation on one set of bases and returns the mutated result
 // Notes:
-// * a mutation overrides some bits with new random values
-// * a permutation randomly reorders some bits (without changing the values)
+// * a mutation overrides some bases with new random values
+// * a permutation randomly reorders some bases (without changing the values)
 type Mutation interface {
-	Mutate(bits gene.Bits) gene.Bits
+	Mutate(chrm gene.Chromosome) gene.Chromosome
 }
 
 // ------------------------------
@@ -22,33 +22,33 @@ type Mutation interface {
 type UniqueMutation struct{}
 
 // Mutate a unique bit in the gene
-func (UniqueMutation) Mutate(bits gene.Bits) gene.Bits {
-	i := random.Intn(bits.Len())
-	result := bits.Clone()
+func (UniqueMutation) Mutate(chrm gene.Chromosome) gene.Chromosome {
+	i := random.IntN(chrm.Len())
+	result := chrm.Clone()
 	result.Raw[i] = result.Rand()
 	return result
 }
 
 // ------------------------------
 
-// UniformMutation defines a random mutation of bits
+// UniformMutation defines a random mutation of bases
 type UniformMutation struct{}
 
 // Mutate each bit with a probability of 50%
-func (UniformMutation) Mutate(bits gene.Bits) gene.Bits {
-	return mutate(bits, 0.5, func(b gene.Bits, _ int) uint8 {
+func (UniformMutation) Mutate(chrm gene.Chromosome) gene.Chromosome {
+	return mutate(chrm, 0.5, func(b gene.Chromosome, _ int) gene.B {
 		return b.Rand()
 	})
 }
 
 // ------------------------------
 
-// SwapPermutation defines a random swap of 2 bits
+// SwapPermutation defines a random swap of 2 bases
 type SwapPermutation struct{}
 
 // Mutate select 2 positions and swap the values
-func (SwapPermutation) Mutate(bits gene.Bits) gene.Bits {
-	return permutation(bits, func(in gene.Bits, out *gene.Bits, pos1, pos2 int) {
+func (SwapPermutation) Mutate(chrm gene.Chromosome) gene.Chromosome {
+	return permutation(chrm, func(in gene.Chromosome, out *gene.Chromosome, pos1, pos2 int) {
 		out.Raw[pos1] = in.Raw[pos2]
 		out.Raw[pos2] = in.Raw[pos1]
 	})
@@ -63,8 +63,8 @@ type InversionPermutation struct{}
 // eg.:
 //   - input:  AB.CDEF.GH
 //   - output: AB.FEDC.GH
-func (InversionPermutation) Mutate(bits gene.Bits) gene.Bits {
-	return permutation(bits, func(in gene.Bits, out *gene.Bits, pos1, pos2 int) {
+func (InversionPermutation) Mutate(chrm gene.Chromosome) gene.Chromosome {
+	return permutation(chrm, func(in gene.Chromosome, out *gene.Chromosome, pos1, pos2 int) {
 		for i := pos1; i <= pos2; i++ {
 			out.Raw[i] = in.Raw[pos2-i+pos1]
 		}
@@ -80,8 +80,8 @@ type ScramblePermutation struct{}
 // eg.:
 //   - input:  AB.CDEF.GH
 //   - output: AB.ECFD.GH
-func (ScramblePermutation) Mutate(bits gene.Bits) gene.Bits {
-	return permutation(bits, func(in gene.Bits, out *gene.Bits, pos1, pos2 int) {
+func (ScramblePermutation) Mutate(chrm gene.Chromosome) gene.Chromosome {
+	return permutation(chrm, func(in gene.Chromosome, out *gene.Chromosome, pos1, pos2 int) {
 		indexes := random.Perm(pos2 - pos1)
 		for i, index := range indexes {
 			out.Raw[pos1+i] = in.Raw[pos1+index]
@@ -99,13 +99,19 @@ type probaMutation struct {
 
 // MultiMutation defines a serie of mutations with a specific probability of beeing chosen.
 // All or no mutations may be applied
-type MultiMutation []probaMutation
+type MultiMutation struct {
+	ApplyAll  bool // Set it to true, otherwise, processing stops at the first mutation to be applied
+	mutations []probaMutation
+}
 
-func (mm MultiMutation) Mutate(bits gene.Bits) gene.Bits {
-	res := bits
-	for _, m := range mm {
+func (mm MultiMutation) Mutate(chrm gene.Chromosome) gene.Chromosome {
+	res := chrm
+	for _, m := range mm.mutations {
 		if random.Peek(m.rate) {
 			res = m.mut.Mutate(res)
+			if !mm.ApplyAll {
+				return res
+			}
 		}
 	}
 	return res
@@ -113,18 +119,21 @@ func (mm MultiMutation) Mutate(bits gene.Bits) gene.Bits {
 
 // Use the given proba mutation
 func (mm MultiMutation) Use(rate float64, mut Mutation) MultiMutation {
-	return append(mm, probaMutation{
-		rate: rate,
-		mut:  mut,
-	})
+	return MultiMutation{
+		ApplyAll: mm.ApplyAll,
+		mutations: append(mm.mutations, probaMutation{
+			rate: rate,
+			mut:  mut,
+		}),
+	}
 }
 
 // ------------------------------
 
-// mutate inverts some bits using a mutation rate
-func mutate(bits gene.Bits, rate float64, fct func(gene.Bits, int) uint8) gene.Bits {
-	result := bits.Clone()
-	for i := 0; i < result.Len(); i++ {
+// mutate inverts some bases using a mutation rate
+func mutate(chrm gene.Chromosome, rate float64, fct func(gene.Chromosome, int) gene.B) gene.Chromosome {
+	result := chrm.Clone()
+	for i := range result.Len() {
 		if random.Peek(rate) {
 			result.Raw[i] = fct(result, i)
 		}
@@ -132,9 +141,12 @@ func mutate(bits gene.Bits, rate float64, fct func(gene.Bits, int) uint8) gene.B
 	return result
 }
 
-func permutation(bits gene.Bits, apply func(in gene.Bits, out *gene.Bits, pos1, pos2 int)) gene.Bits {
-	pos := random.OrderedInts(0, bits.Len(), 2)
-	result := bits.Clone()
-	apply(bits, &result, pos[0], pos[1])
+func permutation(chrm gene.Chromosome, apply func(in gene.Chromosome, out *gene.Chromosome, pos1, pos2 int)) gene.Chromosome {
+	pos := random.OrderedInts(0, chrm.Len(), 2)
+	if pos[0] == pos[1] { // unchanged pos, leave bases unchanged
+		return chrm
+	}
+	result := chrm.Clone()
+	apply(chrm, &result, pos[0], pos[1])
 	return result
 }

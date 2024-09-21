@@ -20,20 +20,23 @@ func TestInitializer(t *testing.T) {
 			initializer := RandomInitializer{
 				MaxValue: 8,
 			}
-			So(initializer.Check(8), ShouldBeNil)
-			So(countUnique(initializer.Init(8).Raw), ShouldBeGreaterThan, 0)
+			chrm, err := initializer.Init(8)
+			So(err, ShouldBeNil)
+			So(countUnique(chrm.Raw), ShouldBeGreaterThan, 0)
 		})
 
 		Convey("permutation", func() {
 			Convey("when ok", func() {
 				initializer := PermutationInitializer{}
-				So(initializer.Check(8), ShouldBeNil)
-				So(countUnique(initializer.Init(8).Raw), ShouldEqual, 8)
+				chrm, err := initializer.Init(8)
+				So(err, ShouldBeNil)
+				So(countUnique(chrm.Raw), ShouldEqual, 8)
 			})
 
 			Convey("when error", func() {
 				initializer := PermutationInitializer{}
-				So(initializer.Check(256), ShouldNotBeNil)
+				_, err := initializer.Init(0)
+				So(err, ShouldNotBeNil)
 			})
 		})
 	})

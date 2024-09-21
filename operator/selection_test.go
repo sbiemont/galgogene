@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/sbiemont/galgogene/gene"
+	"github.com/sbiemont/galgogene/random"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -51,65 +52,55 @@ func TestSelection(t *testing.T) {
 			})
 
 			Convey("when k=1", func() {
+				random.Seed(1)
 				ind, err := TournamentSelection{Fighters: 1}.Select(pop)
 				So(err, ShouldBeNil)
-				So(ind.Fitness, ShouldBeGreaterThanOrEqualTo, 0.1)
+				So(ind.Fitness, ShouldEqual, 0.9)
 			})
 
 			Convey("when k=2", func() {
+				random.Seed(3)
 				ind, err := TournamentSelection{Fighters: 2}.Select(pop)
 				So(err, ShouldBeNil)
-				So(ind.Fitness, ShouldBeGreaterThanOrEqualTo, 0.1)
+				So(ind.Fitness, ShouldEqual, 0.5)
 			})
 
 			Convey("when k=3", func() {
+				random.Seed(3)
 				ind, err := TournamentSelection{Fighters: 3}.Select(pop)
 				So(err, ShouldBeNil)
-				So(ind.Fitness, ShouldBeGreaterThanOrEqualTo, 0.1)
+				So(ind.Fitness, ShouldEqual, 0.6)
 			})
 
 			Convey("when k=4", func() {
+				random.Seed(3)
 				ind, err := TournamentSelection{Fighters: 4}.Select(pop)
 				So(err, ShouldBeNil)
-				So(ind.Fitness, ShouldBeGreaterThanOrEqualTo, 0.1)
+				So(ind.Fitness, ShouldEqual, 0.6)
 			})
 		})
 
-		// Convey("when new multi selection", func() {
-		// 	Convey("when empty", func() {
-		// 		selections, err := NewMultiSelection([]ProbaSelection{})
-		// 		So(err, ShouldBeError, "at least one selection is required")
-		// 		So(selections, ShouldBeEmpty)
-		// 	})
+		Convey("when multi selection", func() {
+			Convey("when ok", func() {
+				selections := MultiSelection{}.
+					Use(0.1, RouletteSelection{}).
+					Use(0.2, EliteSelection{}).
+					Otherwise(TournamentSelection{Fighters: 42})
 
-		// 	Convey("when missing proba >= 1", func() {
-		// 		selections, err := NewMultiSelection([]ProbaSelection{
-		// 			NewProbaSelection(0.1, SelectionRoulette{}),
-		// 			NewProbaSelection(0.2, SelectionRoulette{}),
-		// 		})
-		// 		So(err, ShouldBeError, "selection with proba=1 shall only be the last one")
-		// 		So(selections, ShouldBeEmpty)
-		// 	})
-
-		// 	Convey("when proba >= 1 but not last", func() {
-		// 		selections, err := NewMultiSelection([]ProbaSelection{
-		// 			NewProbaSelection(0.1, SelectionRoulette{}),
-		// 			NewProbaSelection(1.0, SelectionRoulette{}),
-		// 			NewProbaSelection(0.2, SelectionRoulette{}),
-		// 		})
-		// 		So(err, ShouldBeError, "selection with proba=1 shall only be the last one")
-		// 		So(selections, ShouldBeEmpty)
-		// 	})
-
-		// 	Convey("when ok", func() {
-		// 		selections, err := NewMultiSelection([]ProbaSelection{
-		// 			NewProbaSelection(0.1, SelectionRoulette{}),
-		// 			NewProbaSelection(0.2, SelectionRoulette{}),
-		// 			NewProbaSelection(1.0, SelectionRoulette{}),
-		// 		})
-		// 		So(err, ShouldBeNil)
-		// 		So(selections, ShouldHaveLength, 3)
-		// 	})
-		// })
+				So(selections, ShouldResemble, multiSelection{
+					selections: []probaSelection{
+						{
+							rate: 0.1,
+							sel:  RouletteSelection{},
+						},
+						{
+							rate: 0.2,
+							sel:  EliteSelection{},
+						},
+					},
+					deflt: TournamentSelection{Fighters: 42},
+				})
+			})
+		})
 	})
 }
