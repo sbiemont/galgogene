@@ -7,7 +7,7 @@ import (
 	"github.com/sbiemont/galgogene/random"
 )
 
-// selection: "https://en.wikipedia.org/wiki/Selection_(genetic_algorithm)"
+// selection: https://en.wikipedia.org/wiki/Selection_(genetic_algorithm)
 
 // Selection defines the selection method of one individual in a population
 type Selection interface {

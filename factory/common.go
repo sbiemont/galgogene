@@ -40,8 +40,8 @@ func (f commonSurvivor) Rank() operator.RankSurvivor {
 	return operator.RankSurvivor{}
 }
 
-func (f commonSurvivor) Children() operator.ChildrenSurvivor {
-	return operator.ChildrenSurvivor{}
+func (f commonSurvivor) Random() operator.RandomSurvivor {
+	return operator.RandomSurvivor{}
 }
 
 func (f commonSurvivor) Multi() operator.MultiSurvivor {

@@ -35,6 +35,10 @@ func (f permutationCrossOver) UniformOrder() operator.UniformOrderCrossOver {
 	return operator.UniformOrderCrossOver{}
 }
 
+func (f permutationCrossOver) PartiallyMatch() operator.PartiallyMatchCrossOver {
+	return operator.PartiallyMatchCrossOver{}
+}
+
 func (f permutationCrossOver) Multi() operator.MultiCrossOver {
 	return operator.MultiCrossOver{}
 }

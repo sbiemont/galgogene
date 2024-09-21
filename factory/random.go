@@ -19,7 +19,7 @@ type Random struct {
 
 type randomInitializer struct{}
 
-func (f randomInitializer) Random(maxValue uint8) gene.RandomInitializer {
+func (f randomInitializer) Random(maxValue gene.B) gene.RandomInitializer {
 	return gene.RandomInitializer{
 		MaxValue: maxValue,
 	}
