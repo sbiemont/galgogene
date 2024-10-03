@@ -380,6 +380,8 @@ solution, err := eng.Run(popSize, offspringSize, chromosomeSize)
 
 ## Annex
 
+### General algorithm
+
 Here is the general algorithm explained using pseudo code:
 
 ```raw
@@ -401,7 +403,7 @@ loop until terminating condition found {
 return pop
 ```
 
-The full process:
+### Full process
 
 ```mermaid
 graph LR
@@ -421,4 +423,16 @@ graph LR
   start -->|parents| survive
   termination -->|yes| done(Done)
   termination -->|use survivors as<br>current population| start
+```
+
+### Model
+
+```mermaid
+graph LR
+  pop(Population)
+  ind(Individual)
+  chrm(Chromosome)
+  b(Base)
+
+  pop -->|individuals| ind --> |code| chrm -->|raw| b
 ```
