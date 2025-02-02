@@ -33,7 +33,7 @@ func main() {
 		Survivor:    operator.EliteSurvivor{},
 		Termination: &operator.FitnessTermination{Fitness: 1},
 		Fitness:     fitness,
-		OnNewGeneration: func(pop gene.Population) {
+		OnNewGeneration: func(pop, _, _ gene.Population) {
 			elite := pop.Elite()
 			fmt.Printf(
 				"Generation #%d, dur: %11s fit: %f, tot: %f, str: %s\n",

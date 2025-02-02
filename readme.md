@@ -9,12 +9,20 @@ Check the [examples](https://github.com/sbiemont/galgogene/tree/master/example),
 ```shell
 make example1 # Find a simple input string using a minimalistic engine
 make example2 # Find a more complex string using a custom engine
-make example3 # Find a solution to the traveling salesman problem (with ~30 cities)
+make example3 # Find a solution to the traveling salesman problem (with ~40 cities)
 ```
 
 These examples may not find the best solution. Your turn to customise them !
 
 See [annex](#annex) for general information about the main algorithm.
+
+An example to the output of the traveling salesman problem (6s processing)
+
+50 random points | 120 random points | 9 × 14 matrix
+-------- | ----------- | -----
+6s processing | 1mn processing | 1mn processing
+<img src="./example/traveling_salesman/tsp-example.gif" width="300" /> | <img src="./example/traveling_salesman/tsp-example-1.png" width="300" /> | <img src="./example/traveling_salesman/tsp-example-2.png" width="300" />
+
 
 ## Roadmap
 
@@ -247,8 +255,14 @@ termination := operator.MultiTermination{}.
 To create a custom `Termination`, implement this function to match the interface:
 
 ```go
-func End(pop gene.Population) Termination { ... }
+func End(pop, withBestIndividual, withBestTotalFitness gene.Population) Termination { ... }
 ```
+
+parameter | description
+--------- | -----------
+`pop`                  | the current population
+`withBestIndividual`   | the population with the best individual ever computed (search for `population.Stats.Elite`)
+`withBestTotalFitness` | the population with the best total-fitness ever computed (search for `population.Stats.TotalFitness`)
 
 ### Fitness function
 

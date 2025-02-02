@@ -9,7 +9,7 @@ import (
 // Termination defines an ending condition for the engine
 type Termination interface {
 	// End returns true when the processing should end ; false otherwise
-	End(pop gene.Population) Termination
+	End(pop, withBestIndividual, withBestTotalFitness gene.Population) Termination
 }
 
 // ------------------------------
@@ -19,7 +19,7 @@ type GenerationTermination struct {
 	K int // The max generation to be reached
 }
 
-func (end *GenerationTermination) End(pop gene.Population) Termination {
+func (end *GenerationTermination) End(pop, _, _ gene.Population) Termination {
 	return condition(pop.Stats.GenerationNb >= end.K, end)
 }
 
@@ -33,15 +33,15 @@ type ImprovementTermination struct {
 	previousTotalFitness float64
 }
 
-func (end *ImprovementTermination) End(pop gene.Population) Termination {
-	if end.previousTotalFitness == pop.Stats.TotalFitness {
+func (end *ImprovementTermination) End(_, _, withBestTotalFitness gene.Population) Termination {
+	if end.previousTotalFitness == withBestTotalFitness.Stats.TotalFitness {
 		end.k++ // one more generation with same fitness
 	} else {
 		end.k = 0 // reset
 	}
 
 	k := getDefault(end.K, 1)
-	end.previousTotalFitness = pop.Stats.TotalFitness
+	end.previousTotalFitness = withBestTotalFitness.Stats.TotalFitness
 	return condition(end.k >= k, end)
 }
 
@@ -52,11 +52,9 @@ type FitnessTermination struct {
 	Fitness float64 // Min fitness
 }
 
-func (end *FitnessTermination) End(pop gene.Population) Termination {
-	for _, individual := range pop.Individuals {
-		if individual.Fitness >= end.Fitness {
-			return end
-		}
+func (end *FitnessTermination) End(pop, _, _ gene.Population) Termination {
+	if pop.Stats.Elite.Fitness >= end.Fitness {
+		return end
 	}
 
 	return nil
@@ -69,7 +67,7 @@ type DurationTermination struct {
 	Duration time.Duration // Max duration
 }
 
-func (end *DurationTermination) End(pop gene.Population) Termination {
+func (end *DurationTermination) End(pop, _, _ gene.Population) Termination {
 	return condition(pop.Stats.TotalDuration >= end.Duration, end)
 }
 
@@ -82,9 +80,9 @@ func (end MultiTermination) Use(t Termination) MultiTermination {
 	return append(end, t)
 }
 
-func (end MultiTermination) End(pop gene.Population) Termination {
+func (end MultiTermination) End(pop, withBestIndividual, withBestTotalFitness gene.Population) Termination {
 	for _, termination := range end {
-		if termination.End(pop) != nil {
+		if termination.End(pop, withBestIndividual, withBestTotalFitness) != nil {
 			return termination // ok, termination found
 		}
 	}

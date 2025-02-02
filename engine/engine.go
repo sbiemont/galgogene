@@ -17,7 +17,7 @@ type Engine struct {
 	Survivor        operator.Survivor
 	Termination     operator.Termination
 	Fitness         gene.Fitness
-	OnNewGeneration func(gene.Population)
+	OnNewGeneration func(pop gene.Population, withBestIndividual gene.Population, withBestTotalFitness gene.Population)
 }
 
 func (eng Engine) check() error {
@@ -69,7 +69,7 @@ func (eng Engine) Run(popSize, offspringSize, chromosomeSize int) (Solution, err
 	if errInit != nil {
 		return Solution{}, errInit
 	}
-	eng.onNewGeneration(population)
+	eng.onNewGeneration(population, population, population)
 
 	// New channels
 	chSelection := make(chan gene.Population, 1)
@@ -112,7 +112,7 @@ func (eng Engine) run(
 
 	for {
 		// End ?
-		termination := eng.Termination.End(population)
+		termination := eng.Termination.End(population, withBestIndividual, withBestTotalFit)
 		if termination != nil {
 			chSolution <- Solution{
 				PopWithBestIndividual:   withBestIndividual,
@@ -130,20 +130,20 @@ func (eng Engine) run(
 		population = eng.survivors(start, population, offsprings)
 
 		// Custom action
-		eng.onNewGeneration(population)
 		if population.Stats.TotalFitness > withBestTotalFit.Stats.TotalFitness {
 			withBestTotalFit = population
 		}
 		if population.Stats.Elite.Fitness > withBestIndividual.Stats.Elite.Fitness {
 			withBestIndividual = population
 		}
+		eng.onNewGeneration(population, withBestIndividual, withBestTotalFit)
 	}
 }
 
 // onNewGeneration calls the user method (only if defined)
-func (eng Engine) onNewGeneration(population gene.Population) {
+func (eng Engine) onNewGeneration(population, withBestIndividual, withBestTotalFit gene.Population) {
 	if eng.OnNewGeneration != nil {
-		eng.OnNewGeneration(population)
+		eng.OnNewGeneration(population, withBestIndividual, withBestTotalFit)
 	}
 }
 
