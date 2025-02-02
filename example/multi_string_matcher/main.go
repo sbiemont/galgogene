@@ -46,7 +46,7 @@ func main() {
 			Use(&operator.FitnessTermination{Fitness: 1}).                 // End with perfect fitness
 			Use(&operator.DurationTermination{Duration: 3 * time.Second}), // End after 3s
 		Fitness: fitness,
-		OnNewGeneration: func(pop gene.Population) {
+		OnNewGeneration: func(pop, _, _ gene.Population) {
 			elite := pop.Elite()
 			fmt.Printf(
 				"Generation #%d, dur: %4dms fit: %f, tot: %f, str: %s\n",

@@ -11,28 +11,19 @@ import (
 	"github.com/sbiemont/galgogene/operator"
 )
 
+const (
+	filenameCircle = "./example/traveling_salesman/circle.csv"
+	filenameRandom = "./example/traveling_salesman/random.csv"
+	filenameSquare = "./example/traveling_salesman/square.csv"
+	maxDuration    = 2 * time.Minute
+)
+
 // coordinates of all cities
 // coordinates[0] gives coordinates(x,y) of city #0
-var coordinates = [][2]float64{
-	{0.05, 0.38}, {0.06, 0.95},
-	{0.10, 0.32}, {0.10, 0.39},
-	{0.17, 0.52}, {0.18, 0.20},
-	{0.32, 0.53}, {0.32, 0.04},
-	{0.38, 0.85}, {0.39, 0.41},
-	{0.44, 0.46}, {0.45, 0.23},
-	{0.51, 1.00}, {0.60, 0.50},
-	{0.70, 0.28}, {0.71, 0.48},
-	{0.71, 0.81}, {0.80, 0.23},
-	{0.83, 0.76}, {0.98, 0.85},
-	{0.17, 0.21}, {0.59, 0.14},
-	{0.13, 0.95}, {0.44, 0.53},
-	{0.42, 0.68}, {0.77, 0.09},
-	{0.91, 0.33}, {0.82, 0.27},
-	{0.01, 0.87}, {0.19, 0.05},
-}
+var coordinates [][2]float64
 
 // distances is a small cache for cities distances
-var distances = make(map[string]float64)
+var distances map[string]float64
 
 func dist(cityA, cityB gene.B) float64 {
 	key := fmt.Sprintf("%d-%d", cityA, cityB)
@@ -64,6 +55,19 @@ func (cts cities) String() string {
 	return "[" + strings.Join(result, ", ") + "]"
 }
 
+// Convert cities to 2D coordinates for printing
+func (cts cities) Coordinates() [][2]float32 {
+	result := make([][2]float32, len(cts))
+	for i, city := range cts {
+		coord := coordinates[city]
+		result[i] = [2]float32{
+			float32(coord[0]),
+			float32(coord[1]),
+		}
+	}
+	return result
+}
+
 // Compute distances [A, B, C, D]
 // dist = A->B + B->C + C->D + D->A
 func (cts cities) Distance() float64 {
@@ -85,6 +89,43 @@ func (cts cities) Fitness() float64 {
 }
 
 func main() {
+	// err := writeCircle(30, filenameCircle)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// err = writeRandom(120, filenameRandom)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// Init game engine
+	game, _ := NewGame(600, 600)
+	go func() {
+		err := Run(game)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	filenames := []string{filenameCircle, filenameRandom, filenameSquare}
+	for _, filename := range filenames {
+		run(game, DataCsv{
+			Filename: filename,
+		})
+	}
+}
+
+func run(game *Game, dc DataCsv) {
+	distances = make(map[string]float64)
+
+	// Init coordinates
+	var err error
+	coordinates, err = dc.ReadCoordinates()
+	if err != nil {
+		panic(err)
+	}
+
 	popSize := 600
 	eng := engine.Engine{
 		Initializer: gene.PermutationInitializer{},
@@ -102,13 +143,20 @@ func main() {
 			Use(0.6, operator.EliteSurvivor{}).
 			Otherwise(operator.RandomSurvivor{}),
 		Termination: operator.MultiTermination{}.
-			Use(&operator.GenerationTermination{K: 1000}).
-			Use(&operator.ImprovementTermination{K: 10}).
-			Use(&operator.DurationTermination{Duration: 5 * time.Second}),
+			Use(&operator.GenerationTermination{K: 1500}).
+			Use(&operator.ImprovementTermination{K: 150}).
+			Use(&operator.DurationTermination{Duration: maxDuration}),
 		Fitness: func(chrm gene.Chromosome) float64 {
 			return newCities(chrm).Fitness()
 		},
-		OnNewGeneration: func(pop gene.Population) {
+		OnNewGeneration: func(pop, withBestIndividual, _ gene.Population) {
+			if pop.Stats.GenerationNb%10 == 0 {
+				elite := newCities(withBestIndividual.Elite().Code)
+				game.AddData(elite.Coordinates())
+				game.Distance = elite.Distance()
+			}
+			game.GenerationNb = pop.Stats.GenerationNb
+
 			elite := newCities(pop.Elite().Code)
 			fmt.Printf(
 				"Generation #%-3d, dur: %.3fs, fit: %.4f, tot-fit: %.4f, uniq: %d/%d\n",
@@ -145,4 +193,7 @@ func main() {
 	}
 	out("Best individual", solution.PopWithBestIndividual)
 	out("Best generation", solution.PopWithBestTotalFitness)
+
+	fmt.Println("\nPress ENTER to continue or exit")
+	fmt.Scanln()
 }
