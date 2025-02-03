@@ -21,7 +21,7 @@ An example to the output of the traveling salesman problem (6s processing)
 50 random points | 120 random points | 9 × 14 matrix
 -------- | ----------- | -----
 6s processing | 1mn processing | 1mn processing
-![](https://github.com/sbiemont/galgogene/tree/main/example/traveling_salesman/tsp-example.gif) | ![](https://github.com/sbiemont/galgogene/tree/main/example/traveling_salesman/tsp-example-1.png") | ![](https://github.com/sbiemont/galgogene/tree/main/example/traveling_salesman/tsp-example-2.png")
+![](https://github.com/sbiemont/galgogene/tree/main/example/traveling_salesman/tsp-example.gif) | ![](https://github.com/sbiemont/galgogene/tree/main/example/traveling_salesman/tsp-example-1.png) | ![](https://github.com/sbiemont/galgogene/tree/main/example/traveling_salesman/tsp-example-2.png)
 
 ## Roadmap
 
