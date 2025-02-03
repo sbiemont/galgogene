@@ -4,7 +4,7 @@ Galgogene is a simple implementation of a [genetic algorithm](https://en.wikiped
 
 ## Getting started
 
-Check the [examples](https://github.com/sbiemont/galgogene/tree/master/example), and run them:
+Check the [examples](https://github.com/sbiemont/galgogene/tree/main/example), and run them:
 
 ```shell
 make example1 # Find a simple input string using a minimalistic engine
