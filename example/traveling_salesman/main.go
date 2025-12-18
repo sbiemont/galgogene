@@ -15,7 +15,7 @@ const (
 	filenameCircle = "./example/traveling_salesman/circle.csv"
 	filenameRandom = "./example/traveling_salesman/random.csv"
 	filenameSquare = "./example/traveling_salesman/square.csv"
-	maxDuration    = 2 * time.Minute
+	maxDuration    = time.Minute
 )
 
 // coordinates of all cities
@@ -136,7 +136,7 @@ func run(game *Game, dc DataCsv) {
 			Use(0.1, operator.UniformOrderCrossOver{}).
 			Use(1.0, operator.DavisOrderCrossOver{}),
 		Mutation: operator.MultiMutation{}.
-			Use(0.05, operator.InversionPermutation{}).
+			Use(0.06, operator.InversionPermutation{}).
 			Use(0.05, operator.SwapPermutation{}).
 			Use(0.05, operator.ScramblePermutation{}),
 		Survivor: operator.MultiSurvivor{}.
@@ -144,15 +144,15 @@ func run(game *Game, dc DataCsv) {
 			Otherwise(operator.RandomSurvivor{}),
 		Termination: operator.MultiTermination{}.
 			Use(&operator.GenerationTermination{K: 1500}).
-			Use(&operator.ImprovementTermination{K: 150}).
-			Use(&operator.DurationTermination{Duration: maxDuration}),
+			Use(&operator.ImprovementTermination{K: 2 * 100}).
+			Use(&operator.DurationTermination{Duration: 2 * maxDuration}),
 		Fitness: func(chrm gene.Chromosome) float64 {
 			return newCities(chrm).Fitness()
 		},
 		OnNewGeneration: func(pop, withBestIndividual, _ gene.Population) {
 			if pop.Stats.GenerationNb%10 == 0 {
 				elite := newCities(withBestIndividual.Elite().Code)
-				game.AddData(elite.Coordinates())
+				game.SetData(elite.Coordinates())
 				game.Distance = elite.Distance()
 			}
 			game.GenerationNb = pop.Stats.GenerationNb
@@ -194,6 +194,6 @@ func run(game *Game, dc DataCsv) {
 	out("Best individual", solution.PopWithBestIndividual)
 	out("Best generation", solution.PopWithBestTotalFitness)
 
-	fmt.Println("\nPress ENTER to continue or exit")
+	fmt.Println("\nPress ENTER to exit")
 	fmt.Scanln()
 }
