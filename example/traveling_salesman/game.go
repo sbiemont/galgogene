@@ -34,7 +34,7 @@ func NewGame(width, height float32) (*Game, func()) {
 	return game, func() { close(game.Data) }
 }
 
-func (g *Game) AddData(data [][2]float32) {
+func (g *Game) SetData(data [][2]float32) {
 	g.Data <- data
 }
 

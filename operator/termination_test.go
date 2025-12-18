@@ -51,21 +51,14 @@ func TestTerminations(t *testing.T) {
 		})
 
 		Convey("when above fitness termination", func() {
-			pop := gene.Population{
-				Individuals: []gene.Individual{
-					{Fitness: 0.5},
-					{Fitness: 0.6},
-					{Fitness: 0.7},
-				},
-			}
-			pop.ComputeTotalFitness() // also compute elite
-
 			Convey("when ko", func() {
+				pop := gene.Population{Stats: gene.PopulationStats{Elite: gene.Individual{Fitness: 0.6}}}
 				termination := FitnessTermination{Fitness: 0.8}
 				So(termination.End(pop, pop, pop), ShouldBeNil)
 			})
 
 			Convey("when ok", func() {
+				pop := gene.Population{Stats: gene.PopulationStats{Elite: gene.Individual{Fitness: 0.7}}}
 				termination := FitnessTermination{Fitness: 0.7}
 				So(termination.End(pop, pop, pop), ShouldEqual, &termination)
 			})
